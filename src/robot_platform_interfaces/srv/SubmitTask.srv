@@ -1,0 +1,32 @@
+# 服务：平台向机器人任务管理器发一个任务请求，并同步拿到处理结果
+# 任务下发服务
+# 上半部分是请求，下半部分是响应
+
+# ===== 请求部分 =====
+
+# 目标机器人 ID
+# 第一版主要用 robot_1，后续可扩展到多机器人
+string robot_id
+
+# 目标点二维坐标
+# 第一版先只支持平面导航目标
+float32 target_x
+float32 target_y
+
+# 任务类型
+# 示例：goto / patrol / dock
+string task_type
+
+---
+# ===== 响应部分 =====
+
+# 任务是否被成功接收
+bool accepted
+
+# 平台生成的任务 ID
+# 若任务未被接收，也可以返回空字符串
+string task_id
+
+# 补充说明信息
+# 示例：Task accepted / Robot offline / Invalid target
+string message
