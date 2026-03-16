@@ -8,9 +8,12 @@
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+
   <depend>rosidl_default_generators</depend>
   <depend>builtin_interfaces</depend>
 
+  <!-- 运行时依赖：让其他 C++ / Python 包在运行阶段能够使用这些自定义接口 -->
+  <exec_depend>rosidl_default_runtime</exec_depend>
   <member_of_group>rosidl_interface_packages</member_of_group>
 
   <test_depend>ament_lint_auto</test_depend>
