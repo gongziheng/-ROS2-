@@ -13,7 +13,7 @@ class FakeRobotNode(Node):
         self.x = 0.0
         self.y = 0.0
         self.yaw = 0.0
-        self.liner_vel = 0.0
+        self.linear_vel = 0.0
         self.angular_vel = 0.0
         self.battery_pct = 100.0
         self.mode = 'idle'
@@ -24,11 +24,11 @@ class FakeRobotNode(Node):
         self.target_y = None
         # 发布当前机器人的状态
         self.status_pub = self.create_publisher(
-            RobotStatus, 'robot_1/status', 10
+            RobotStatus, '/robot_1/status', 10
         )
         # 订阅robot_1/goal，获取机器人的目标位置
         self.goal_sub = self.create_subscription(
-            Point, 'robot_1/goal', self.goal_callback, 10
+            Point, '/robot_1/goal', self.goal_callback, 10
         )
         # 定时器：定时发布机器人的状态
         self.timer = self.create_timer(0.1, self.on_timer)

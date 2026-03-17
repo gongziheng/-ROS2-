@@ -3,7 +3,7 @@ from rclpy.node import Node
 from robot_platform_interfaces.msg import RobotStatus
 
 # 检查1.低电量告警 2.机器人阻塞
-class AlertMonitorNode():
+class AlertMonitorNode(Node):
     def __init__(self):
         super().__init__('alert_monitor_node')
 

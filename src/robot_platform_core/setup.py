@@ -24,6 +24,9 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'fake_robot_node=robot_platform_core.fake_robot_node:main',
+            'task_manager_node=robot_platform_core.task_manager_node:main',
+            'alert_monitor_node=robot_platform_core.alert_monitor_node:main',
         ],
     },
 )
