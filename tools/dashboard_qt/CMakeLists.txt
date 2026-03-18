@@ -12,13 +12,16 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets Network WebSockets)
 
 add_executable(dashboard_qt
     main.cpp
+
     mainwindow.cpp
+    resizehandle.cpp
     overviewpage.cpp
     taskspage.cpp
     alertspage.cpp
     settingspage.cpp
 
     mainwindow.h
+    resizehandle.h
     overviewpage.h
     taskspage.h
     alertspage.h

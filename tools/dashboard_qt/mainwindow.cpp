@@ -6,30 +6,31 @@
 #include "alertspage.h"
 #include "settingspage.h"
 
+#include <QButtonGroup>
 #include <QEvent>
+#include <QGuiApplication>
 #include <QMouseEvent>
+#include <QPushButton>
+#include <QScreen>
+#include <QStatusBar>
 #include <QWidget>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , m_overviewPage(nullptr)
-    , m_tasksPage(nullptr)
-    , m_alertsPage(nullptr)
-    , m_settingsPage(nullptr)
 {
     ui->setupUi(this);
 
-    // 如果你的 mainwindow.ui 用的是自定义标题栏，通常需要无边框窗口
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
+    setMinimumSize(900, 620);
 
     setupPages();
     setupConnections();
+    setupWindowBehavior();
+    adaptToScreen();
 
-    // 假设标题栏容器对象名叫 titleBar
-    if (ui->titleBar) {
-        ui->titleBar->installEventFilter(this);
-    }
+    syncNavButtons(ui->btnNavOverview);
+    ui->stackedPages->setCurrentWidget(m_overviewPage);
 
     appendLog("Dashboard Qt started.");
 }
@@ -46,18 +47,21 @@ void MainWindow::setupPages()
     m_alertsPage = new AlertsPage(this);
     m_settingsPage = new SettingsPage(this);
 
-    // 假设 mainwindow.ui 中有一个 QStackedWidget，objectName = stackedPages
     ui->stackedPages->addWidget(m_overviewPage);
     ui->stackedPages->addWidget(m_tasksPage);
     ui->stackedPages->addWidget(m_alertsPage);
     ui->stackedPages->addWidget(m_settingsPage);
-
-    ui->stackedPages->setCurrentWidget(m_overviewPage);
 }
 
 void MainWindow::setupConnections()
 {
-    // 左侧导航按钮 objectName 请和你的 mainwindow.ui 保持一致
+    m_navGroup = new QButtonGroup(this);
+    m_navGroup->setExclusive(true);
+    m_navGroup->addButton(ui->btnNavOverview);
+    m_navGroup->addButton(ui->btnNavTasks);
+    m_navGroup->addButton(ui->btnNavAlerts);
+    m_navGroup->addButton(ui->btnNavSettings);
+
     connect(ui->btnNavOverview, &QPushButton::clicked,
             this, &MainWindow::onNavOverviewClicked);
     connect(ui->btnNavTasks, &QPushButton::clicked,
@@ -67,7 +71,6 @@ void MainWindow::setupConnections()
     connect(ui->btnNavSettings, &QPushButton::clicked,
             this, &MainWindow::onNavSettingsClicked);
 
-    // 右上角窗口按钮
     connect(ui->btnWindowMinimize, &QPushButton::clicked,
             this, &MainWindow::onWindowMinClicked);
     connect(ui->btnWindowMaximize, &QPushButton::clicked,
@@ -76,36 +79,101 @@ void MainWindow::setupConnections()
             this, &MainWindow::onWindowCloseClicked);
 }
 
+void MainWindow::setupWindowBehavior()
+{
+    // 1) 标题栏本体
+    ui->titleBar->installEventFilter(this);
+
+    // 2) 标题栏里面所有非按钮子控件，也都纳入拖动区域
+    const auto titleChildren = ui->titleBar->findChildren<QWidget *>();
+    for (QWidget *w : titleChildren) {
+        if (w == ui->btnWindowMinimize ||
+            w == ui->btnWindowMaximize ||
+            w == ui->btnWindowClose) {
+            continue;
+        }
+        w->installEventFilter(this);
+    }
+}
+
+void MainWindow::adaptToScreen()
+{
+    QScreen *screen = QGuiApplication::primaryScreen();
+    if (!screen) {
+        resize(1280, 800);
+        return;
+    }
+
+    const QRect available = screen->availableGeometry();
+
+    int targetWidth = qMin(1440, int(available.width() * 0.92));
+    int targetHeight = qMin(900, int(available.height() * 0.90));
+
+    targetWidth = qMax(900, qMin(targetWidth, available.width()));
+    targetHeight = qMax(620, qMin(targetHeight, available.height()));
+
+    resize(targetWidth, targetHeight);
+    move(available.center() - rect().center());
+}
+
+bool MainWindow::isWindowControlButton(QObject *obj) const
+{
+    return obj == ui->btnWindowMinimize ||
+           obj == ui->btnWindowMaximize ||
+           obj == ui->btnWindowClose;
+}
+
+bool MainWindow::isTitleDragTarget(QObject *obj) const
+{
+    QWidget *w = qobject_cast<QWidget *>(obj);
+    if (!w || !ui->titleBar) {
+        return false;
+    }
+
+    if (isWindowControlButton(obj)) {
+        return false;
+    }
+
+    return (w == ui->titleBar) || ui->titleBar->isAncestorOf(w);
+}
+
+void MainWindow::syncNavButtons(QPushButton *activeButton)
+{
+    if (activeButton) {
+        activeButton->setChecked(true);
+    }
+}
+
 void MainWindow::appendLog(const QString &text)
 {
-    // 假设 mainwindow.ui 中全局日志框 objectName = textGlobalLog
-    // if (ui->textGlobalLog) {
-    //     ui->textGlobalLog->appendPlainText(text);
-    // }
     statusBar()->showMessage(text, 3000);
 }
 
 void MainWindow::onNavOverviewClicked()
 {
     ui->stackedPages->setCurrentWidget(m_overviewPage);
+    syncNavButtons(ui->btnNavOverview);
     appendLog("Switch to Overview page.");
 }
 
 void MainWindow::onNavTasksClicked()
 {
     ui->stackedPages->setCurrentWidget(m_tasksPage);
+    syncNavButtons(ui->btnNavTasks);
     appendLog("Switch to Tasks page.");
 }
 
 void MainWindow::onNavAlertsClicked()
 {
     ui->stackedPages->setCurrentWidget(m_alertsPage);
+    syncNavButtons(ui->btnNavAlerts);
     appendLog("Switch to Alerts page.");
 }
 
 void MainWindow::onNavSettingsClicked()
 {
     ui->stackedPages->setCurrentWidget(m_settingsPage);
+    syncNavButtons(ui->btnNavSettings);
     appendLog("Switch to Settings page.");
 }
 
@@ -116,12 +184,14 @@ void MainWindow::onWindowMinClicked()
 
 void MainWindow::onWindowMaxClicked()
 {
-    if (m_isMaximized) {
-        showNormal();
-        m_isMaximized = false;
+    if (windowState() & Qt::WindowMaximized) {
+        setWindowState(Qt::WindowNoState);
+        ui->btnWindowMaximize->setText("□");
+        appendLog("Window restored.");
     } else {
-        showMaximized();
-        m_isMaximized = true;
+        setWindowState(Qt::WindowMaximized);
+        ui->btnWindowMaximize->setText("❐");
+        appendLog("Window maximized.");
     }
 }
 
@@ -132,27 +202,41 @@ void MainWindow::onWindowCloseClicked()
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
-    if (watched == ui->titleBar) {
-        if (event->type() == QEvent::MouseButtonPress) {
-            auto *mouseEvent = static_cast<QMouseEvent *>(event);
-            if (mouseEvent->button() == Qt::LeftButton) {
-                m_dragging = true;
-                m_dragOffset = mouseEvent->globalPos() - frameGeometry().topLeft();
-                return true;
+    if (!isTitleDragTarget(watched)) {
+        return QMainWindow::eventFilter(watched, event);
+    }
+
+    if (event->type() == QEvent::MouseButtonPress) {
+        auto *mouseEvent = static_cast<QMouseEvent *>(event);
+        if (mouseEvent->button() == Qt::LeftButton) {
+            m_point = mouseEvent->globalPos();
+
+            if (!(windowState() & Qt::WindowMaximized)) {
+                m_pressed = true;
             }
-        } else if (event->type() == QEvent::MouseMove) {
-            if (m_dragging && !m_isMaximized) {
-                auto *mouseEvent = static_cast<QMouseEvent *>(event);
-                move(mouseEvent->globalPos() - m_dragOffset);
-                return true;
-            }
-        } else if (event->type() == QEvent::MouseButtonRelease) {
-            m_dragging = false;
-            return true;
-        } else if (event->type() == QEvent::MouseButtonDblClick) {
-            onWindowMaxClicked();
             return true;
         }
+    }
+
+    if (event->type() == QEvent::MouseMove) {
+        auto *mouseEvent = static_cast<QMouseEvent *>(event);
+        if (m_pressed && (mouseEvent->buttons() & Qt::LeftButton)) {
+            const QPoint movePoint = mouseEvent->globalPos() - m_point;
+            const QPoint widgetPos = this->pos() + movePoint;
+            m_point = mouseEvent->globalPos();
+            this->move(widgetPos);
+            return true;
+        }
+    }
+
+    if (event->type() == QEvent::MouseButtonRelease) {
+        m_pressed = false;
+        return true;
+    }
+
+    if (event->type() == QEvent::MouseButtonDblClick) {
+        onWindowMaxClicked();
+        return true;
     }
 
     return QMainWindow::eventFilter(watched, event);

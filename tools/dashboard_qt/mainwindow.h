@@ -4,6 +4,9 @@
 #include <QMainWindow>
 #include <QPoint>
 
+class QButtonGroup;
+class QPushButton;
+
 class OverviewPage;
 class TasksPage;
 class AlertsPage;
@@ -39,19 +42,26 @@ private slots:
 private:
     void setupPages();
     void setupConnections();
+    void setupWindowBehavior();
+    void adaptToScreen();
+
+    bool isWindowControlButton(QObject *obj) const;
+    bool isTitleDragTarget(QObject *obj) const;
+    void syncNavButtons(QPushButton *activeButton);
     void appendLog(const QString &text);
 
 private:
-    Ui::MainWindow *ui;
+    Ui::MainWindow *ui = nullptr;
 
-    OverviewPage *m_overviewPage;
-    TasksPage *m_tasksPage;
-    AlertsPage *m_alertsPage;
-    SettingsPage *m_settingsPage;
+    OverviewPage *m_overviewPage = nullptr;
+    TasksPage *m_tasksPage = nullptr;
+    AlertsPage *m_alertsPage = nullptr;
+    SettingsPage *m_settingsPage = nullptr;
 
-    bool m_isMaximized = false;
-    bool m_dragging = false;
-    QPoint m_dragOffset;
+    QButtonGroup *m_navGroup = nullptr;
+
+    bool m_pressed = false;
+    QPoint m_point;
 };
 
 #endif // MAINWINDOW_H
