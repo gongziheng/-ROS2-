@@ -1,22 +1,14 @@
-#ifndef TASKSPAGE_H
-#define TASKSPAGE_H
+#include "taskspage.h"
+#include "ui_tasks_page.h"
 
-#include <QWidget>
-
-namespace Ui {
-class TasksPage;
+TasksPage::TasksPage(QWidget *parent)
+    : QWidget(parent)
+    , ui(new Ui::TasksPage)
+{
+    ui->setupUi(this);
 }
 
-class TasksPage : public QWidget
+TasksPage::~TasksPage()
 {
-    Q_OBJECT
-
-public:
-    explicit TasksPage(QWidget *parent = nullptr);
-    ~TasksPage();
-
-private:
-    Ui::TasksPage *ui;
-};
-
-#endif // TASKSPAGE_H
+    delete ui;
+}
