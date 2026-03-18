@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>OverviewPage</class>
+ <widget class="QWidget" name="总览看板Page">
+  <property name="styleSheet">
+   <string notr="true">QWidget {
+    background: #F7FAF7;
+    color: #1F2A1F;
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+}
+QFrame#pageCard, QFrame#statCard, QFrame#taskCard, QFrame#logCard, QFrame#tableCard, QFrame#settingsCard, QFrame#heroCard {
+    background: #FFFFFF;
+    border: 1px solid #E6EEE8;
+    border-radius: 16px;
+}
+QLabel#pageHeading {
+    color: #16311E;
+    font: 700 18pt "Microsoft YaHei";
+}
+QLabel#pageSubheading {
+    color: #6E7E73;
+    font: 10pt "Microsoft YaHei";
+}
+QLabel#sectionTitle {
+    color: #203024;
+    font: 700 10.5pt "Microsoft YaHei";
+}
+QLabel#statValue {
+    color: #168C48;
+    font: 700 18pt "Microsoft YaHei";
+}
+QLabel#statLabel, QLabel#fieldLabel {
+    color: #738377;
+    font: 9.5pt "Microsoft YaHei";
+}
+QLineEdit, QComboBox, QPlainTextEdit, QSpinBox, QDoubleSpinBox {
+    background: #FFFFFF;
+    border: 1px solid #DCE8DF;
+    border-radius: 10px;
+    padding: 6px 10px;
+    color: #223026;
+}
+QPushButton#primaryButton {
+    background: #22C55E;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 10px;
+    min-height: 38px;
+    padding: 0 18px;
+    font: 700 10pt "Microsoft YaHei";
+}
+QPushButton#primaryButton:hover {
+    background: #16A34A;
+}
+QPushButton#secondaryButton {
+    background: #F3FAF5;
+    color: #168C48;
+    border: 1px solid #CDEED8;
+    border-radius: 10px;
+    min-height: 38px;
+    padding: 0 18px;
+    font: 700 10pt "Microsoft YaHei";
+}
+QPushButton#secondaryButton:hover {
+    background: #E8F8EE;
+}
+QTableWidget {
+    background: #FFFFFF;
+    border: 1px solid #E6EEE8;
+    border-radius: 12px;
+    gridline-color: #EEF2EF;
+    color: #243126;
+}
+QHeaderView::section {
+    background: #F8FBF8;
+    color: #5D6D62;
+    padding: 8px;
+    border: none;
+    border-bottom: 1px solid #E6EEE8;
+    font: 700 9pt "Microsoft YaHei";
+}</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayoutRoot">
+   <property name="spacing">
+    <number>18</number>
+   </property>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QFrame" name="heroCard">
+     <layout class="QVBoxLayout" name="verticalLayoutHero">
+      <property name="spacing">
+       <number>4</number>
+      </property>
+      <property name="leftMargin">
+       <number>22</number>
+      </property>
+      <property name="topMargin">
+       <number>18</number>
+      </property>
+      <property name="rightMargin">
+       <number>22</number>
+      </property>
+      <property name="bottomMargin">
+       <number>18</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="pageHeading">
+        <property name="text">
+         <string>总览看板</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="pageSubheading">
+        <property name="text">
+         <string>查看机器人状态、轨迹区域与关键指标。</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayoutStats">
+     <property name="spacing">
+      <number>16</number>
+     </property>
+     <item>
+      <widget class="QFrame" name="statCard">
+       <layout class="QVBoxLayout" name="verticalLayoutStat1">
+        <property name="leftMargin"><number>18</number></property>
+        <property name="topMargin"><number>16</number></property>
+        <property name="rightMargin"><number>18</number></property>
+        <property name="bottomMargin"><number>16</number></property>
+        <item><widget class="QLabel" name="statLabel"><property name="text"><string>机器人状态</string></property></widget></item>
+        <item><widget class="QLabel" name="statValue"><property name="text"><string>在线</string></property></widget></item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QFrame" name="statCard">
+       <layout class="QVBoxLayout" name="verticalLayoutStat2">
+        <property name="leftMargin"><number>18</number></property>
+        <property name="topMargin"><number>16</number></property>
+        <property name="rightMargin"><number>18</number></property>
+        <property name="bottomMargin"><number>16</number></property>
+        <item><widget class="QLabel" name="statLabel2"><property name="styleSheet"><string notr="true">color:#738377; font:9.5pt "Microsoft YaHei";</string></property><property name="text"><string>电量</string></property></widget></item>
+        <item><widget class="QLabel" name="statValue2"><property name="styleSheet"><string notr="true">color:#168C48; font:700 18pt "Microsoft YaHei";</string></property><property name="text"><string>87%</string></property></widget></item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QFrame" name="statCard">
+       <layout class="QVBoxLayout" name="verticalLayoutStat3">
+        <property name="leftMargin"><number>18</number></property>
+        <property name="topMargin"><number>16</number></property>
+        <property name="rightMargin"><number>18</number></property>
+        <property name="bottomMargin"><number>16</number></property>
+        <item><widget class="QLabel" name="statLabel3"><property name="styleSheet"><string notr="true">color:#738377; font:9.5pt "Microsoft YaHei";</string></property><property name="text"><string>当前任务</string></property></widget></item>
+        <item><widget class="QLabel" name="statValue3"><property name="styleSheet"><string notr="true">color:#168C48; font:700 18pt "Microsoft YaHei";</string></property><property name="text"><string>goto_001</string></property></widget></item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QFrame" name="statCard">
+       <layout class="QVBoxLayout" name="verticalLayoutStat4">
+        <property name="leftMargin"><number>18</number></property>
+        <property name="topMargin"><number>16</number></property>
+        <property name="rightMargin"><number>18</number></property>
+        <property name="bottomMargin"><number>16</number></property>
+        <item><widget class="QLabel" name="statLabel4"><property name="styleSheet"><string notr="true">color:#738377; font:9.5pt "Microsoft YaHei";</string></property><property name="text"><string>告警数</string></property></widget></item>
+        <item><widget class="QLabel" name="statValue4"><property name="styleSheet"><string notr="true">color:#168C48; font:700 18pt "Microsoft YaHei";</string></property><property name="text"><string>0</string></property></widget></item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayoutMainPanels">
+     <property name="spacing"><number>16</number></property>
+     <item>
+      <widget class="QFrame" name="pageCard">
+       <layout class="QVBoxLayout" name="verticalLayoutMapCard">
+        <property name="leftMargin"><number>18</number></property>
+        <property name="topMargin"><number>16</number></property>
+        <property name="rightMargin"><number>18</number></property>
+        <property name="bottomMargin"><number>18</number></property>
+        <item><widget class="QLabel" name="sectionTitle"><property name="text"><string>地图 / 轨迹区域</string></property></widget></item>
+        <item>
+         <widget class="QFrame" name="frameMapCanvas">
+          <property name="minimumSize"><size><width>0</width><height>360</height></size></property>
+          <property name="styleSheet"><string notr="true">background:#FBFDFC; border:1px dashed #CFE5D5; border-radius:14px;</string></property>
+          <layout class="QVBoxLayout" name="verticalLayoutMapCanvas">
+           <item>
+            <widget class="QLabel" name="labelMapHint">
+             <property name="styleSheet"><string notr="true">color:#7A8B7E; font:11pt "Microsoft YaHei";</string></property>
+             <property name="alignment"><set>Qt::AlignCenter</set></property>
+             <property name="text"><string>后续可在这里嵌入轨迹平面 / 地图视图</string></property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QFrame" name="pageCard">
+       <property name="minimumSize"><size><width>320</width><height>0</height></size></property>
+       <property name="maximumSize"><size><width>360</width><height>16777215</height></size></property>
+       <layout class="QVBoxLayout" name="verticalLayoutStatusCard">
+        <property name="leftMargin"><number>18</number></property>
+        <property name="topMargin"><number>16</number></property>
+        <property name="rightMargin"><number>18</number></property>
+        <property name="bottomMargin"><number>16</number></property>
+        <property name="spacing"><number>12</number></property>
+        <item><widget class="QLabel" name="sectionTitle2"><property name="styleSheet"><string notr="true">color:#203024; font:700 10.5pt "Microsoft YaHei";</string></property><property name="text"><string>机器人状态</string></property></widget></item>
+        <item><widget class="QLabel" name="fieldLabel"><property name="text"><string>Robot ID</string></property></widget></item>
+        <item><widget class="QLineEdit" name="labelRobotIdValue"><property name="text"><string>robot_1</string></property><property name="readOnly"><bool>true</bool></property></widget></item>
+        <item><widget class="QLabel" name="fieldLabel2"><property name="styleSheet"><string notr="true">color:#738377; font:9.5pt "Microsoft YaHei";</string></property><property name="text"><string>坐标 X / Y / Yaw</string></property></widget></item>
+        <item><widget class="QLineEdit" name="linePose"><property name="text"><string>1.25 / 2.40 / 0.78</string></property><property name="readOnly"><bool>true</bool></property></widget></item>
+        <item><widget class="QLabel" name="fieldLabel3"><property name="styleSheet"><string notr="true">color:#738377; font:9.5pt "Microsoft YaHei";</string></property><property name="text"><string>模式</string></property></widget></item>
+        <item><widget class="QLineEdit" name="lineMode"><property name="text"><string>moving</string></property><property name="readOnly"><bool>true</bool></property></widget></item>
+        <item><widget class="QLabel" name="fieldLabel4"><property name="styleSheet"><string notr="true">color:#738377; font:9.5pt "Microsoft YaHei";</string></property><property name="text"><string>当前告警</string></property></widget></item>
+        <item><widget class="QPlainTextEdit" name="plainAlertText"><property name="maximumSize"><size><width>16777215</width><height>92</height></size></property><property name="plainText"><string>暂无告警</string></property><property name="readOnly"><bool>true</bool></property></widget></item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

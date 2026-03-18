@@ -1,0 +1,886 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1440</width>
+    <height>900</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Robot Platform Console</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QMainWindow, QWidget#centralwidget {
+    background: #F7FAF7;
+    color: #1F2A1F;
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+}
+QFrame#titleBar {
+    background: #FFFFFF;
+    border-bottom: 1px solid #E6EEE8;
+}
+QFrame#sideBar {
+    background: #FFFFFF;
+    border-right: 1px solid #E6EEE8;
+}
+QFrame#contentArea {
+    background: #F7FAF7;
+}
+QFrame#topSummaryBar {
+    background: #FFFFFF;
+    border: 1px solid #E6EEE8;
+    border-radius: 14px;
+}
+QLabel#appBadge {
+    background: #22C55E;
+    color: #FFFFFF;
+    border-radius: 8px;
+    font: 700 12pt "Microsoft YaHei";
+}
+QLabel#pageTitle {
+    color: #16311E;
+    font: 700 16pt "Microsoft YaHei";
+}
+QLabel#pageSubtitle, QLabel#lastSyncLabel {
+    color: #6E7E73;
+    font: 10pt "Microsoft YaHei";
+}
+QLabel#connectionPill {
+    background: #E8F8EE;
+    color: #16A34A;
+    border: 1px solid #CDEED8;
+    border-radius: 11px;
+    padding: 3px 12px;
+    font: 700 9pt "Microsoft YaHei";
+}
+QPushButton#btnWindowMinimize, QPushButton#btnWindowMaximize, QPushButton#btnWindowClose {
+    min-width: 46px;
+    max-width: 46px;
+    min-height: 30px;
+    max-height: 30px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #4E5E53;
+    font: 11pt "Microsoft YaHei";
+}
+QPushButton#btnWindowMinimize:hover, QPushButton#btnWindowMaximize:hover {
+    background: #EEF5F0;
+    color: #1F2A1F;
+}
+QPushButton#btnWindowClose:hover {
+    background: #E5484D;
+    color: #FFFFFF;
+}
+QPushButton#btnNavOverview, QPushButton#btnNavTasks, QPushButton#btnNavAlerts, QPushButton#btnNavSettings {
+    min-height: 42px;
+    text-align: left;
+    padding: 0 16px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #405045;
+    font: 10.5pt "Microsoft YaHei";
+}
+QPushButton#btnNavOverview:hover, QPushButton#btnNavTasks:hover, QPushButton#btnNavAlerts:hover, QPushButton#btnNavSettings:hover {
+    background: #F3FAF5;
+    color: #1B7F45;
+}
+QPushButton#btnNavOverview:checked, QPushButton#btnNavTasks:checked, QPushButton#btnNavAlerts:checked, QPushButton#btnNavSettings:checked {
+    background: #E8F8EE;
+    color: #138A46;
+    border: 1px solid #CDEED8;
+    font: 700 10.5pt "Microsoft YaHei";
+}
+QFrame#robotCard, QFrame#systemCard {
+    background: #FFFFFF;
+    border: 1px solid #E6EEE8;
+    border-radius: 14px;
+}
+QLabel#cardTitle {
+    color: #203024;
+    font: 700 10.5pt "Microsoft YaHei";
+}
+QLabel#metricTitle {
+    color: #728276;
+    font: 9pt "Microsoft YaHei";
+}
+QLabel#metricValue {
+    color: #1B7F45;
+    font: 700 15pt "Microsoft YaHei";
+}
+QFrame#stackContainer {
+    background: transparent;
+    border: none;
+}
+QStackedWidget#stackedPages {
+    background: transparent;
+    border: none;
+}</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayoutRoot">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QFrame" name="titleBar">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>52</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>52</height>
+       </size>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayoutTitleBar">
+       <property name="spacing">
+        <number>14</number>
+       </property>
+       <property name="leftMargin">
+        <number>16</number>
+       </property>
+       <property name="topMargin">
+        <number>8</number>
+       </property>
+       <property name="rightMargin">
+        <number>10</number>
+       </property>
+       <property name="bottomMargin">
+        <number>8</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="appBadge">
+         <property name="minimumSize">
+          <size>
+           <width>34</width>
+           <height>34</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>34</width>
+           <height>34</height>
+          </size>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="text">
+          <string>RP</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayoutTitleTexts">
+         <property name="spacing">
+          <number>1</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="pageTitle">
+           <property name="text">
+            <string>机器人上位机控制台</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="pageSubtitle">
+           <property name="text">
+            <string>Robot Platform Console · 白底浅绿主题</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <spacer name="horizontalSpacerTitleBar">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="connectionPill">
+         <property name="text">
+          <string>● 在线</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnWindowMinimize">
+         <property name="text">
+          <string>—</string>
+         </property>
+         <property name="toolTip">
+          <string>最小化</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnWindowMaximize">
+         <property name="text">
+          <string>□</string>
+         </property>
+         <property name="toolTip">
+          <string>最大化 / 还原</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnWindowClose">
+         <property name="text">
+          <string>×</string>
+         </property>
+         <property name="toolTip">
+          <string>关闭</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayoutMain">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QFrame" name="sideBar">
+        <property name="minimumSize">
+         <size>
+          <width>236</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>236</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayoutSideBar">
+         <property name="spacing">
+          <number>14</number>
+         </property>
+         <property name="leftMargin">
+          <number>16</number>
+         </property>
+         <property name="topMargin">
+          <number>20</number>
+         </property>
+         <property name="rightMargin">
+          <number>16</number>
+         </property>
+         <property name="bottomMargin">
+          <number>20</number>
+         </property>
+         <item>
+          <widget class="QPushButton" name="btnNavOverview">
+           <property name="text">
+            <string>总览看板</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnNavTasks">
+           <property name="text">
+            <string>任务中心</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnNavAlerts">
+           <property name="text">
+            <string>告警中心</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnNavSettings">
+           <property name="text">
+            <string>系统设置</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="verticalSpacerNav">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>30</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QFrame" name="robotCard">
+           <layout class="QVBoxLayout" name="verticalLayoutRobotCard">
+            <property name="spacing">
+             <number>10</number>
+            </property>
+            <property name="leftMargin">
+             <number>14</number>
+            </property>
+            <property name="topMargin">
+             <number>14</number>
+            </property>
+            <property name="rightMargin">
+             <number>14</number>
+            </property>
+            <property name="bottomMargin">
+             <number>14</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="cardTitle">
+              <property name="text">
+               <string>机器人概况</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="metricTitle">
+              <property name="text">
+               <string>当前在线机器人</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="metricValue">
+              <property name="text">
+               <string>1 台</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="metricTitle2">
+              <property name="styleSheet">
+               <string notr="true">color:#728276; font:9pt "Microsoft YaHei";</string>
+              </property>
+              <property name="text">
+               <string>连接状态</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="metricValue2">
+              <property name="styleSheet">
+               <string notr="true">color:#203024; font:700 11pt "Microsoft YaHei";</string>
+              </property>
+              <property name="text">
+               <string>robot_1 · 正常</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QFrame" name="systemCard">
+           <layout class="QVBoxLayout" name="verticalLayoutSystemCard">
+            <property name="spacing">
+             <number>8</number>
+            </property>
+            <property name="leftMargin">
+             <number>14</number>
+            </property>
+            <property name="topMargin">
+             <number>14</number>
+            </property>
+            <property name="rightMargin">
+             <number>14</number>
+            </property>
+            <property name="bottomMargin">
+             <number>14</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="cardTitle2">
+              <property name="styleSheet">
+               <string notr="true">color:#203024; font:700 10.5pt "Microsoft YaHei";</string>
+              </property>
+              <property name="text">
+               <string>系统信息</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lastSyncLabel">
+              <property name="text">
+               <string>最近同步：2026-03-18 23:59:00</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lastSyncLabel2">
+              <property name="text">
+               <string>API：dashboard_api</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lastSyncLabel3">
+              <property name="text">
+               <string>版本：MVP v2</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="contentArea">
+        <layout class="QVBoxLayout" name="verticalLayoutContent">
+         <property name="spacing">
+          <number>18</number>
+         </property>
+         <property name="leftMargin">
+          <number>20</number>
+         </property>
+         <property name="topMargin">
+          <number>18</number>
+         </property>
+         <property name="rightMargin">
+          <number>20</number>
+         </property>
+         <property name="bottomMargin">
+          <number>18</number>
+         </property>
+         <item>
+          <widget class="QFrame" name="topSummaryBar">
+           <layout class="QHBoxLayout" name="horizontalLayoutSummary">
+            <property name="spacing">
+             <number>28</number>
+            </property>
+            <property name="leftMargin">
+             <number>18</number>
+            </property>
+            <property name="topMargin">
+             <number>12</number>
+            </property>
+            <property name="rightMargin">
+             <number>18</number>
+            </property>
+            <property name="bottomMargin">
+             <number>12</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="summaryOnline">
+              <property name="styleSheet">
+               <string notr="true">color:#16A34A; font:700 16pt "Microsoft YaHei";</string>
+              </property>
+              <property name="text">
+               <string>在线 1</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="summaryTasks">
+              <property name="styleSheet">
+               <string notr="true">color:#1F2A1F; font:700 16pt "Microsoft YaHei";</string>
+              </property>
+              <property name="text">
+               <string>任务 1</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="summaryAlerts">
+              <property name="styleSheet">
+               <string notr="true">color:#E67E22; font:700 16pt "Microsoft YaHei";</string>
+              </property>
+              <property name="text">
+               <string>告警 0</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacerSummary">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QLabel" name="lastSyncLabelMain">
+              <property name="styleSheet">
+               <string notr="true">color:#6E7E73; font:10pt "Microsoft YaHei";</string>
+              </property>
+              <property name="text">
+               <string>数据已更新 · 0.5s 前</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QFrame" name="stackContainer">
+           <layout class="QVBoxLayout" name="verticalLayoutStackWrap">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QStackedWidget" name="stackedPages">
+              <property name="currentIndex">
+               <number>0</number>
+              </property>
+              <widget class="QWidget" name="pageOverviewHost">
+               <attribute name="title">
+                <string>总览看板</string>
+               </attribute>
+               <layout class="QVBoxLayout" name="verticalLayoutOverviewHost">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QFrame" name="overviewPagePlaceholder">
+                  <property name="styleSheet">
+                   <string notr="true">background:#FFFFFF; border:1px solid #E6EEE8; border-radius:16px;</string>
+                  </property>
+                  <layout class="QVBoxLayout" name="verticalLayoutOverviewPlaceholder">
+                   <property name="leftMargin">
+                    <number>28</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>28</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>28</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>28</number>
+                   </property>
+                   <item>
+                    <widget class="QLabel" name="overviewPlaceholderLabel">
+                     <property name="styleSheet">
+                      <string notr="true">color:#1B7F45; font:700 18pt "Microsoft YaHei";</string>
+                     </property>
+                     <property name="text">
+                      <string>总览页容器</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="overviewPlaceholderDesc">
+                     <property name="styleSheet">
+                      <string notr="true">color:#6E7E73; font:10pt "Microsoft YaHei";</string>
+                     </property>
+                     <property name="text">
+                      <string>可在代码中将 overview_page.ui 动态加载到这里，或直接替换为完整页面。</string>
+                     </property>
+                     <property name="wordWrap">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+              <widget class="QWidget" name="pageTasksHost">
+               <attribute name="title">
+                <string>任务中心</string>
+               </attribute>
+               <layout class="QVBoxLayout" name="verticalLayoutTasksHost">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QFrame" name="tasksPagePlaceholder">
+                  <property name="styleSheet">
+                   <string notr="true">background:#FFFFFF; border:1px solid #E6EEE8; border-radius:16px;</string>
+                  </property>
+                  <layout class="QVBoxLayout" name="verticalLayoutTasksPlaceholder">
+                   <property name="leftMargin">
+                    <number>28</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>28</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>28</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>28</number>
+                   </property>
+                   <item>
+                    <widget class="QLabel" name="tasksPlaceholderLabel">
+                     <property name="styleSheet">
+                      <string notr="true">color:#1B7F45; font:700 18pt "Microsoft YaHei";</string>
+                     </property>
+                     <property name="text">
+                      <string>任务页容器</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="tasksPlaceholderDesc">
+                     <property name="styleSheet">
+                      <string notr="true">color:#6E7E73; font:10pt "Microsoft YaHei";</string>
+                     </property>
+                     <property name="text">
+                      <string>可加载 tasks_page.ui，并将任务下发表单接到 dashboard_api 或 ROS service。</string>
+                     </property>
+                     <property name="wordWrap">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+              <widget class="QWidget" name="pageAlertsHost">
+               <attribute name="title">
+                <string>告警中心</string>
+               </attribute>
+               <layout class="QVBoxLayout" name="verticalLayoutAlertsHost">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QFrame" name="alertsPagePlaceholder">
+                  <property name="styleSheet">
+                   <string notr="true">background:#FFFFFF; border:1px solid #E6EEE8; border-radius:16px;</string>
+                  </property>
+                  <layout class="QVBoxLayout" name="verticalLayoutAlertsPlaceholder">
+                   <property name="leftMargin">
+                    <number>28</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>28</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>28</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>28</number>
+                   </property>
+                   <item>
+                    <widget class="QLabel" name="alertsPlaceholderLabel">
+                     <property name="styleSheet">
+                      <string notr="true">color:#1B7F45; font:700 18pt "Microsoft YaHei";</string>
+                     </property>
+                     <property name="text">
+                      <string>告警页容器</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="alertsPlaceholderDesc">
+                     <property name="styleSheet">
+                      <string notr="true">color:#6E7E73; font:10pt "Microsoft YaHei";</string>
+                     </property>
+                     <property name="text">
+                      <string>可加载 alerts_page.ui，并接收低电量、阻塞、离线等告警数据。</string>
+                     </property>
+                     <property name="wordWrap">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+              <widget class="QWidget" name="pageSettingsHost">
+               <attribute name="title">
+                <string>系统设置</string>
+               </attribute>
+               <layout class="QVBoxLayout" name="verticalLayoutSettingsHost">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QFrame" name="settingsPagePlaceholder">
+                  <property name="styleSheet">
+                   <string notr="true">background:#FFFFFF; border:1px solid #E6EEE8; border-radius:16px;</string>
+                  </property>
+                  <layout class="QVBoxLayout" name="verticalLayoutSettingsPlaceholder">
+                   <property name="leftMargin">
+                    <number>28</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>28</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>28</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>28</number>
+                   </property>
+                   <item>
+                    <widget class="QLabel" name="settingsPlaceholderLabel">
+                     <property name="styleSheet">
+                      <string notr="true">color:#1B7F45; font:700 18pt "Microsoft YaHei";</string>
+                     </property>
+                     <property name="text">
+                      <string>设置页容器</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="settingsPlaceholderDesc">
+                     <property name="styleSheet">
+                      <string notr="true">color:#6E7E73; font:10pt "Microsoft YaHei";</string>
+                     </property>
+                     <property name="text">
+                      <string>可加载 settings_page.ui，用于配置 API 地址、主题、刷新频率等。</string>
+                     </property>
+                     <property name="wordWrap">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

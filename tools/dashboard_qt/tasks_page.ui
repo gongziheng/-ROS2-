@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>TasksPage</class>
+ <widget class="QWidget" name="任务中心Page">
+  <property name="styleSheet">
+   <string notr="true">QWidget {
+    background: #F7FAF7;
+    color: #1F2A1F;
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+}
+QFrame#pageCard, QFrame#statCard, QFrame#taskCard, QFrame#logCard, QFrame#tableCard, QFrame#settingsCard, QFrame#heroCard {
+    background: #FFFFFF;
+    border: 1px solid #E6EEE8;
+    border-radius: 16px;
+}
+QLabel#pageHeading {
+    color: #16311E;
+    font: 700 18pt "Microsoft YaHei";
+}
+QLabel#pageSubheading {
+    color: #6E7E73;
+    font: 10pt "Microsoft YaHei";
+}
+QLabel#sectionTitle {
+    color: #203024;
+    font: 700 10.5pt "Microsoft YaHei";
+}
+QLabel#statValue {
+    color: #168C48;
+    font: 700 18pt "Microsoft YaHei";
+}
+QLabel#statLabel, QLabel#fieldLabel {
+    color: #738377;
+    font: 9.5pt "Microsoft YaHei";
+}
+QLineEdit, QComboBox, QPlainTextEdit, QSpinBox, QDoubleSpinBox {
+    background: #FFFFFF;
+    border: 1px solid #DCE8DF;
+    border-radius: 10px;
+    padding: 6px 10px;
+    color: #223026;
+}
+QPushButton#primaryButton {
+    background: #22C55E;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 10px;
+    min-height: 38px;
+    padding: 0 18px;
+    font: 700 10pt "Microsoft YaHei";
+}
+QPushButton#primaryButton:hover {
+    background: #16A34A;
+}
+QPushButton#secondaryButton {
+    background: #F3FAF5;
+    color: #168C48;
+    border: 1px solid #CDEED8;
+    border-radius: 10px;
+    min-height: 38px;
+    padding: 0 18px;
+    font: 700 10pt "Microsoft YaHei";
+}
+QPushButton#secondaryButton:hover {
+    background: #E8F8EE;
+}
+QTableWidget {
+    background: #FFFFFF;
+    border: 1px solid #E6EEE8;
+    border-radius: 12px;
+    gridline-color: #EEF2EF;
+    color: #243126;
+}
+QHeaderView::section {
+    background: #F8FBF8;
+    color: #5D6D62;
+    padding: 8px;
+    border: none;
+    border-bottom: 1px solid #E6EEE8;
+    font: 700 9pt "Microsoft YaHei";
+}</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayoutRoot">
+   <property name="spacing">
+    <number>18</number>
+   </property>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QFrame" name="heroCard">
+     <layout class="QVBoxLayout" name="verticalLayoutHero">
+      <property name="spacing">
+       <number>4</number>
+      </property>
+      <property name="leftMargin">
+       <number>22</number>
+      </property>
+      <property name="topMargin">
+       <number>18</number>
+      </property>
+      <property name="rightMargin">
+       <number>22</number>
+      </property>
+      <property name="bottomMargin">
+       <number>18</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="pageHeading">
+        <property name="text">
+         <string>任务中心</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="pageSubheading">
+        <property name="text">
+         <string>下发任务、查看执行记录与平台日志。</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayoutTasks">
+     <property name="spacing"><number>16</number></property>
+     <item>
+      <widget class="QFrame" name="taskCard">
+       <property name="minimumSize"><size><width>380</width><height>0</height></size></property>
+       <property name="maximumSize"><size><width>420</width><height>16777215</height></size></property>
+       <layout class="QVBoxLayout" name="verticalLayoutTaskForm">
+        <property name="leftMargin"><number>20</number></property>
+        <property name="topMargin"><number>18</number></property>
+        <property name="rightMargin"><number>20</number></property>
+        <property name="bottomMargin"><number>18</number></property>
+        <property name="spacing"><number>10</number></property>
+        <item><widget class="QLabel" name="sectionTitle"><property name="text"><string>任务下发</string></property></widget></item>
+        <item><widget class="QLabel" name="fieldLabel"><property name="text"><string>Robot ID</string></property></widget></item>
+        <item><widget class="QLineEdit" name="editRobotId"><property name="text"><string>robot_1</string></property></widget></item>
+        <item><widget class="QLabel" name="fieldLabel2"><property name="styleSheet"><string notr="true">color:#738377; font:9.5pt "Microsoft YaHei";</string></property><property name="text"><string>目标 X</string></property></widget></item>
+        <item><widget class="QDoubleSpinBox" name="spinTargetX"><property name="decimals"><number>2</number></property><property name="maximum"><double>9999.000000000000000</double></property><property name="value"><double>2.500000000000000</double></property></widget></item>
+        <item><widget class="QLabel" name="fieldLabel3"><property name="styleSheet"><string notr="true">color:#738377; font:9.5pt "Microsoft YaHei";</string></property><property name="text"><string>目标 Y</string></property></widget></item>
+        <item><widget class="QDoubleSpinBox" name="spinTargetY"><property name="decimals"><number>2</number></property><property name="maximum"><double>9999.000000000000000</double></property><property name="value"><double>1.800000000000000</double></property></widget></item>
+        <item><widget class="QLabel" name="fieldLabel4"><property name="styleSheet"><string notr="true">color:#738377; font:9.5pt "Microsoft YaHei";</string></property><property name="text"><string>任务类型</string></property></widget></item>
+        <item>
+         <widget class="QComboBox" name="comboTaskType">
+          <item><property name="text"><string>goto</string></property></item>
+          <item><property name="text"><string>patrol</string></property></item>
+          <item><property name="text"><string>dock</string></property></item>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayoutTaskButtons">
+          <property name="spacing"><number>10</number></property>
+          <item><widget class="QPushButton" name="btnSubmitTask"><property name="styleSheet"><string notr="true">background:#22C55E; color:#FFFFFF; border:none; border-radius:10px; min-height:38px; padding:0 18px; font:700 10pt "Microsoft YaHei";</string></property><property name="text"><string>下发任务</string></property></widget></item>
+          <item><widget class="QPushButton" name="btnSoftReset"><property name="styleSheet"><string notr="true">background:#F3FAF5; color:#168C48; border:1px solid #CDEED8; border-radius:10px; min-height:38px; padding:0 18px; font:700 10pt "Microsoft YaHei";</string></property><property name="text"><string>清空</string></property></widget></item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayoutRight">
+       <property name="spacing"><number>16</number></property>
+       <item>
+        <widget class="QFrame" name="tableCard">
+         <layout class="QVBoxLayout" name="verticalLayoutRecentTasks">
+          <property name="leftMargin"><number>18</number></property>
+          <property name="topMargin"><number>16</number></property>
+          <property name="rightMargin"><number>18</number></property>
+          <property name="bottomMargin"><number>18</number></property>
+          <item><widget class="QLabel" name="sectionTitle2"><property name="styleSheet"><string notr="true">color:#203024; font:700 10.5pt "Microsoft YaHei";</string></property><property name="text"><string>近期任务</string></property></widget></item>
+          <item>
+           <widget class="QTableWidget" name="tableRecentTasks">
+            <property name="rowCount"><number>4</number></property>
+            <property name="columnCount"><number>5</number></property>
+            <column><property name="text"><string>任务ID</string></property></column>
+            <column><property name="text"><string>机器人</string></property></column>
+            <column><property name="text"><string>目标点</string></property></column>
+            <column><property name="text"><string>状态</string></property></column>
+            <column><property name="text"><string>时间</string></property></column>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="logCard">
+         <layout class="QVBoxLayout" name="verticalLayoutTaskLog">
+          <property name="leftMargin"><number>18</number></property>
+          <property name="topMargin"><number>16</number></property>
+          <property name="rightMargin"><number>18</number></property>
+          <property name="bottomMargin"><number>18</number></property>
+          <item><widget class="QLabel" name="sectionTitle3"><property name="styleSheet"><string notr="true">color:#203024; font:700 10.5pt "Microsoft YaHei";</string></property><property name="text"><string>执行日志</string></property></widget></item>
+          <item><widget class="QPlainTextEdit" name="textLog"><property name="minimumSize"><size><width>0</width><height>180</height></size></property><property name="plainText"><string>[INFO] dashboard ready
+[INFO] waiting for submit_task...
+[INFO] current robot: robot_1</string></property></widget></item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
