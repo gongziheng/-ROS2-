@@ -5,6 +5,7 @@
 #include "taskspage.h"
 #include "alertspage.h"
 #include "settingspage.h"
+#include "dashboardclient.h"
 
 #include <QButtonGroup>
 #include <QEvent>
@@ -94,6 +95,59 @@ void MainWindow::setupWindowBehavior()
         }
         w->installEventFilter(this);
     }
+
+    m_client = new DashboardClient(this);
+
+    // 页面 -> 网络
+    connect(m_tasksPage, &TasksPage::submitRequested,
+            this,
+            [this](const QString &robotId, double x, double y, const QString &taskType) {
+                appendLog(QString("提交任务: robot=%1, x=%2, y=%3, type=%4")
+                            .arg(robotId)
+                            .arg(x, 0, 'f', 2)
+                            .arg(y, 0, 'f', 2)
+                            .arg(taskType));
+                m_tasksPage->appendLog("正在提交任务...");
+                m_client->submitTask(m_taskUrl, robotId, x, y, taskType);
+            });
+
+    // 网络 -> 页面
+    connect(m_client, &DashboardClient::statusUpdated,
+            m_overviewPage, &OverviewPage::updateStatus);
+
+    connect(m_client, &DashboardClient::taskSubmitted,
+            this,
+            [this](const QJsonObject &result) {
+                const bool ok = result.value("ok").toBool();
+                const QJsonObject data = result.value("data").toObject();
+                const QString message = data.value("message").toString();
+                const QString taskId = data.value("task_id").toString();
+
+                const QString line = QString("任务返回: ok=%1, task_id=%2, message=%3")
+                                        .arg(ok ? "true" : "false")
+                                        .arg(taskId)
+                                        .arg(message);
+
+                appendLog(line);
+                m_tasksPage->appendLog(line);
+            });
+
+    connect(m_client, &DashboardClient::connectionChanged,
+            this,
+            [this](bool connected) {
+                appendLog(connected ? "WebSocket 已连接" : "WebSocket 已断开");
+            });
+
+    connect(m_client, &DashboardClient::logMessage,
+            this,
+            [this](const QString &text) {
+                appendLog(text);
+                m_tasksPage->appendLog(text);
+            });
+
+    // 启动时先拉一次当前状态，再连 WebSocket
+    m_client->requestCurrentStatus(m_statusUrl);
+    m_client->connectWebSocket(m_wsUrl);
 }
 
 void MainWindow::adaptToScreen()

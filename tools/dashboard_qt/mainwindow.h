@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QPoint>
+#include <QUrl>
 
 class QButtonGroup;
 class QPushButton;
@@ -11,6 +12,8 @@ class OverviewPage;
 class TasksPage;
 class AlertsPage;
 class SettingsPage;
+
+class DashboardClient;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -57,11 +60,16 @@ private:
     TasksPage *m_tasksPage = nullptr;
     AlertsPage *m_alertsPage = nullptr;
     SettingsPage *m_settingsPage = nullptr;
+    DashboardClient *m_client = nullptr;
 
     QButtonGroup *m_navGroup = nullptr;
 
     bool m_pressed = false;
     QPoint m_point;
+
+    QUrl m_statusUrl = QUrl("http://127.0.0.1:8000/api/status");
+    QUrl m_taskUrl = QUrl("http://127.0.0.1:8000/api/tasks");
+    QUrl m_wsUrl = QUrl("https://127.0.0.1:8000/ws/status");
 };
 
 #endif // MAINWINDOW_H

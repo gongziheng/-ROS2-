@@ -15,6 +15,15 @@ public:
     explicit TasksPage(QWidget *parent = nullptr);
     ~TasksPage();
 
+    void appendLog(const QString &text);
+
+signals:
+    void submitRequested(const QString &robotId, double targetX,
+                         double targetY, const QString &taskType);
+                        
+private:
+    void onSubmitClicked();
+
 private:
     Ui::TasksPage *ui;
 };

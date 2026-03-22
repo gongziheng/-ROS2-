@@ -19,6 +19,7 @@ add_executable(dashboard_qt
     taskspage.cpp
     alertspage.cpp
     settingspage.cpp
+    dashboardclient.cpp
 
     mainwindow.h
     resizehandle.h
@@ -26,6 +27,7 @@ add_executable(dashboard_qt
     taskspage.h
     alertspage.h
     settingspage.h
+    dashboardclient.h
 
     mainwindow.ui
     overview_page.ui

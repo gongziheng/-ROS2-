@@ -73,25 +73,37 @@ class DashboardRosBridge(Node):
 
         future = self.task_client.call_async(req)
 
-        # 阻塞到获取结果
-        # rclpy.spin_until_future_complete(self, future, timeout_sec=3.0)
+        # 同步等待
+        rclpy.spin_until_future_complete(self, future, timeout_sec=3.0)
+        if future.result() is None:
+            return {
+                'accepted': Fales,
+                'task_id': '',
+                'message': 'service call failed or time out'
+            }
+        res = future.result()
+        return {
+            'accepted': bool(res.accepted),
+            'task_id': res.task_id,
+            'message': res.message
+        }
 
         # 非阻塞
-        def request_callback(result_future):
-            if result_future.result() is None:
-                return {
-                    'accepted': False,
-                    'task_id': '',
-                    'message': 'service call failed or timed out'
-                }
-            response = result_future.result()
-            return {
-                'accepted': True,
-                'task_id': resp.task_id,
-                'message': resp.message
-            }
+        # def request_callback(result_future):
+        #     if result_future.result() is None:
+        #         return {
+        #             'accepted': False,
+        #             'task_id': '',
+        #             'message': 'service call failed or timed out'
+        #         }
+        #     response = result_future.result()
+        #     return {
+        #         'accepted': True,
+        #         'task_id': resp.task_id,
+        #         'message': resp.message
+        #     }
 
-        future.add_done_callback(request_callback)
+        # future.add_done_callback(request_callback)
 
     
 _ros_node = None

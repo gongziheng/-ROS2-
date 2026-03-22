@@ -3,7 +3,7 @@ import asyncio
 # 上下文管理库，它常见于 FastAPI 里做应用启动/关闭资源管理，用来写FastAPI的生命周期：服务启动时做什么，服务关闭做什么
 from contextlib import asynccontextmanager
 # 第三方库 fastAPI  Python Web 框架，用来写接口服务
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response
 from fastapi.responses import HTMLResponse
 # 第三方库 数据模型 定义请求体的数据结构
 from pydantic import BaseModel
@@ -48,23 +48,9 @@ def index():
     </html>
     """
 
-@app.get("/", response_class=HTMLResponse)
-def index():
-    return """
-    <html>
-      <head><title>Robot Platform Dashboard API</title></head>
-      <body>
-        <h1>Robot Platform Dashboard API</h1>
-        <p>API is running.</p>
-        <ul>
-          <li><a href="/docs">Swagger Docs</a></li>
-          <li><a href="/redoc">ReDoc</a></li>
-          <li><a href="/api/health">/api/health</a></li>
-          <li><a href="/api/status">/api/status</a></li>
-        </ul>
-      </body>
-    </html>
-    """
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    return Response(status_code=204)
 
 # 健康检查接口
 @app.get('/api/health')

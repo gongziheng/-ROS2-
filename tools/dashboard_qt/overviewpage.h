@@ -1,6 +1,7 @@
 #ifndef OVERVIEWPAGE_H
 #define OVERVIEWPAGE_H
 
+#include <QJsonObject>
 #include <QWidget>
 
 namespace Ui {
@@ -14,6 +15,8 @@ class OverviewPage : public QWidget
 public:
     explicit OverviewPage(QWidget *parent = nullptr);
     ~OverviewPage();
+
+    void updateStatus(const QJsonObject &status);
 
 private:
     Ui::OverviewPage *ui;
