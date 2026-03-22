@@ -129,20 +129,21 @@ void MainWindow::setupWindowBehavior()
                                         .arg(message);
 
                 appendLog(line);
-                m_tasksPage->appendLog(line);
             });
 
     connect(m_client, &DashboardClient::connectionChanged,
             this,
             [this](bool connected) {
                 appendLog(connected ? "WebSocket 已连接" : "WebSocket 已断开");
+                if (!connected) {
+                    m_client->requestCurrentStatus(m_statusUrl);
+                }
             });
 
     connect(m_client, &DashboardClient::logMessage,
             this,
             [this](const QString &text) {
                 appendLog(text);
-                m_tasksPage->appendLog(text);
             });
 
     // 启动时先拉一次当前状态，再连 WebSocket

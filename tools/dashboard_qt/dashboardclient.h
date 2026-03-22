@@ -40,6 +40,7 @@ private:
     void handleStatusPayload(const QByteArray &payload);
     // 处理发布任务的回调
     void handleTaskPayload(const QByteArray &payload);
+    void emitOfflineStatus(const QString &reason);
 
 private:
     QNetworkAccessManager *m_http = nullptr;

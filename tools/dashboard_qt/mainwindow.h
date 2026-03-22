@@ -69,7 +69,7 @@ private:
 
     QUrl m_statusUrl = QUrl("http://127.0.0.1:8000/api/status");
     QUrl m_taskUrl = QUrl("http://127.0.0.1:8000/api/tasks");
-    QUrl m_wsUrl = QUrl("https://127.0.0.1:8000/ws/status");
+    QUrl m_wsUrl = QUrl("ws://127.0.0.1:8000/ws/status");
 };
 
 #endif // MAINWINDOW_H

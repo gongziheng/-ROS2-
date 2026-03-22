@@ -21,13 +21,13 @@ class DashboardRosBridge(Node):
             'linear_vel': 0.0,
             'angular_vel': 0.0,
             'battery_pct': 0.0,
-            'mode': 'unknown',
+            'mode': 'offline',
             'task_id': '',
             'is_online': False,
-            'alert_text': ''
+            'alert_text': 'ROS status timeout'
         }
 
-        self.latest_status_time = 0.0
+        self.last_status_time = 0.0
 
         # 订阅机器人状态
         self.status_sub = self.create_subscription(
@@ -92,7 +92,7 @@ class DashboardRosBridge(Node):
         rclpy.spin_until_future_complete(self, future, timeout_sec=3.0)
         if future.result() is None:
             return {
-                'accepted': Fales,
+                'accepted': False,
                 'task_id': '',
                 'message': 'service call failed or time out'
             }

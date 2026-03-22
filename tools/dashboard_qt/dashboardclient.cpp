@@ -19,6 +19,7 @@ DashboardClient::DashboardClient(QObject *parent)
             m_connected = false;
             emit connectionChanged(false);
             emit logMessage("WebSocket status timeout.");
+            emitOfflineStatus("WebSocket status timeout");
         }
     });
 
@@ -36,6 +37,7 @@ DashboardClient::DashboardClient(QObject *parent)
         m_connected = false;
         emit connectionChanged(false);
         emit logMessage("WebSocket disconnected.");
+        emitOfflineStatus("WebSocket status timeout");
     });
 
     connect(&m_ws, &QWebSocket::textMessageReceived,
@@ -74,6 +76,7 @@ void DashboardClient::requestCurrentStatus(const QUrl &url)
 
         if (reply->error() != QNetworkReply::NoError) {
             emit logMessage(QString("GET /api/status failed: %1").arg(reply->errorString()));
+            emitOfflineStatus("GET /api/status failed");
             reply->deleteLater();
             return;
         }
@@ -122,6 +125,7 @@ void DashboardClient::handleStatusPayload(const QByteArray &payload)
 
     if (error.error != QJsonParseError::NoError || !doc.isObject()) {
         emit logMessage(QString("Status JSON parse failed: %1").arg(error.errorString()));
+        emitOfflineStatus("Status JSON parse failed");
         return;
     }
 
@@ -148,4 +152,22 @@ void DashboardClient::handleTaskPayload(const QByteArray &payload)
     }
 
     emit taskSubmitted(doc.object());
+}
+
+void DashboardClient::emitOfflineStatus(const QString &reason)
+{
+    QJsonObject status;
+    status["robot_id"] = "robot_1";
+    status["x"] = 0.0;
+    status["y"] = 0.0;
+    status["yaw"] = 0.0;
+    status["linear_vel"] = 0.0;
+    status["angular_vel"] = 0.0;
+    status["battery_pct"] = 0.0;
+    status["mode"] = "offline";
+    status["task_id"] = "";
+    status["is_online"] = false;
+    status["alert_text"] = reason;
+
+    emit statusUpdated(status);
 }

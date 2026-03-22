@@ -19,9 +19,6 @@ public:
     void updateStatus(const QJsonObject &status);
 
 private:
-    void setLabelIfExists(const char *name, const QString &text);
-
-private:
     Ui::OverviewPage *ui;
 };
 
