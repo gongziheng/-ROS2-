@@ -6,6 +6,9 @@
 #include <QUrl>
 #include <QWebSocket>
 
+#include <QElapsedTimer>
+#include <QTimer>
+
 class QNetworkAccessManager;
 
 // 负责网络通信
@@ -41,6 +44,9 @@ private:
 private:
     QNetworkAccessManager *m_http = nullptr;
     QWebSocket m_ws;
+    QTimer *m_watchdog = nullptr;
+    QElapsedTimer m_lastMessageTimer;
+    bool m_connected = false;
 };
 
 

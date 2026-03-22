@@ -63,7 +63,7 @@ def get_status():
     ros_bridge = get_ros_bridge()
     if ros_bridge is None:
         return {'ok': False, 'message': 'ROS bridge not ready'}
-    return {'ok': True, 'data': ros_bridge.latest_status}
+    return {'ok': True, 'data': ros_bridge.get_status_snapshot()}
 
 # 提交任务接口
 @app.post('/api/tasks')
@@ -88,7 +88,7 @@ async def websocket_status(websocket: WebSocket):
         while True:
             ros_bridge = get_ros_bridge()
             if ros_bridge is not None:
-                await websocket.send_json(ros_bridge.latest_status)
+                await websocket.send_json(ros_bridge.get_status_snapshot())
             await asyncio.sleep(0.5)
     except WebSocketDisconnect:
         pass

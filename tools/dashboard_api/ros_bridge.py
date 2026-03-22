@@ -1,4 +1,5 @@
 import threading
+import time
 # 类型注释
 from typing import Dict, Any
 
@@ -25,6 +26,8 @@ class DashboardRosBridge(Node):
             'is_online': False,
             'alert_text': ''
         }
+
+        self.latest_status_time = 0.0
 
         # 订阅机器人状态
         self.status_sub = self.create_subscription(
@@ -54,6 +57,18 @@ class DashboardRosBridge(Node):
             'is_online': bool(msg.is_online),
             'alert_text': msg.alert_text
         }
+        self.last_status_time = time.monotonic()
+
+    def get_status_snapshot(self) -> Dict[str, Any]:
+        snapshot = dict(self.latest_status)
+
+        # 超过 1.5 秒没收到 ROS 状态，就认为离线
+        if self.last_status_time == 0.0 or (time.monotonic() - self.last_status_time) > 1.5:
+            snapshot['is_online'] = False
+            snapshot['mode'] = 'offline'
+            snapshot['alert_text'] = 'ROS status timeout'
+            snapshot['task_id'] = snapshot.get('task_id', '')
+        return snapshot
 
     # 给API 调用
     def submit_task(self, robot_id: str, target_x: float, target_y: float, task_type: str):

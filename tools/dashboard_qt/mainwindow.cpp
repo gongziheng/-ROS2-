@@ -201,6 +201,10 @@ void MainWindow::syncNavButtons(QPushButton *activeButton)
 void MainWindow::appendLog(const QString &text)
 {
     statusBar()->showMessage(text, 3000);
+
+    if (m_tasksPage) {
+        m_tasksPage->appendLog(text);
+    }
 }
 
 void MainWindow::onNavOverviewClicked()

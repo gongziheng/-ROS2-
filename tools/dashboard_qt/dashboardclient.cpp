@@ -10,13 +10,30 @@
 DashboardClient::DashboardClient(QObject *parent)
     : QObject(parent)
     , m_http(new QNetworkAccessManager(this))
+    , m_watchdog(new QTimer(this))
 {
+    m_watchdog->setInterval(1000);
+
+    connect(m_watchdog, &QTimer::timeout, this, [this]() {
+        if (m_connected && m_lastMessageTimer.isValid() && m_lastMessageTimer.elapsed() > 2000) {
+            m_connected = false;
+            emit connectionChanged(false);
+            emit logMessage("WebSocket status timeout.");
+        }
+    });
+
+    m_watchdog->start();
+
+
     connect(&m_ws, &QWebSocket::connected, this, [this]() {
+        m_connected = true;
+        m_lastMessageTimer.restart();
         emit connectionChanged(true);
         emit logMessage("WebSocket connected.");
     });
 
     connect(&m_ws, &QWebSocket::disconnected, this, [this]() {
+        m_connected = false;
         emit connectionChanged(false);
         emit logMessage("WebSocket disconnected.");
     });
@@ -24,6 +41,7 @@ DashboardClient::DashboardClient(QObject *parent)
     connect(&m_ws, &QWebSocket::textMessageReceived,
             this,
             [this](const QString &message) {
+                m_lastMessageTimer.restart();
                 handleStatusPayload(message.toUtf8());
             });
 
