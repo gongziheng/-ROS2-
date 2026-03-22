@@ -29,6 +29,7 @@ find_package(builtin_interfaces REQUIRED)
 # 对接口文件进行注册，声明其为消息接口文件，并添加依赖
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/RobotStatus.msg"
+  "msg/TaskCommand.msg"
   "srv/SubmitTask.srv"
   DEPENDENCIES builtin_interfaces
 )

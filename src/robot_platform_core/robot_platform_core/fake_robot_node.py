@@ -18,6 +18,7 @@ class FakeRobotNode(Node):
         self.battery_pct = 100.0
         self.mode = 'idle'
         self.task_id = ''
+        self.task_type = ''
         self.alert_text = ''
 
         self.target_x = None
@@ -27,23 +28,20 @@ class FakeRobotNode(Node):
             RobotStatus, '/robot_1/status', 10
         )
         # 订阅robot_1/goal，获取机器人的目标位置
-        self.goal_sub = self.create_subscription(
-            Point, '/robot_1/goal', self.goal_callback, 10
+        self.task_sub = self.create_subscription(
+            TaskCommand, '/robot_1/task_cmd', self.task_callback, 10
         )
         # 定时器：定时发布机器人的状态
         self.timer = self.create_timer(0.1, self.on_timer)
         self.get_logger().info(f'Fake robot node started. {self.robot_id}')
 
-    def goal_callback(self, msg: Point):
+    def task_callback(self, msg: TaskCommand):
         self.target_x = float(msg.x)
         self.target_y = float(msg.y)
-
-        # 这里简单用时间戳拼一个task_id,后面真实任务id由task_manager覆盖
-        if not self.task_id:
-            now = self.get_clock().now().nanoseconds
-            self.task_id = f'task_{now}'
-
+        self.task_id = msg.task_id
+        self.task_type = msg.task_type
         self.mode = 'moving'
+
         self.get_logger().info(
             f'Received goal: ({self.target_x:.2f}, {self.target_y:.2f})'
         )
@@ -62,7 +60,7 @@ class FakeRobotNode(Node):
                 step = min(speed * dt, dist)
                 self.x += step * math.cos(self.yaw)
                 self.y += step * math.sin(self.yaw)
-                self.liner_vel = speed
+                self.linear_vel = speed
                 self.angular_vel = 0.0
                 self.mode = 'moving'
             else:
@@ -70,14 +68,16 @@ class FakeRobotNode(Node):
                 self.y = self.target_y
                 self.target_x = None
                 self.target_y = None
-                self.liner_vel = 0.0
+                self.linear_vel = 0.0
                 self.angular_vel = 0.0
                 self.mode = 'idle'
+                self.get_logger().info(f'Goal reached: task={self.task_id}')
                 self.task_id = ''
-                self.get_logger().info('Goal reached.')
+                self.task_type = ''
         else:
-            self.liner_vel = 0.0
+            self.linear_vel = 0.0
             self.angular_vel = 0.0
+            self.mode = 'idle'
 
         self.battery_pct = max(0.0, self.battery_pct - 0.01)
 

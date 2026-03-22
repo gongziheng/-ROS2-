@@ -65,6 +65,21 @@ def get_status():
         return {'ok': False, 'message': 'ROS bridge not ready'}
     return {'ok': True, 'data': ros_bridge.get_status_snapshot()}
 
+@app.get('/api/tasks/recent')
+def get_recent_tasks():
+    ros_bridge = get_ros_bridge()
+    if ros_bridge is None:
+        return {'ok': False, 'data': []}
+    return {'ok': True, 'data': ros_bridge.get_recent_tasks()}
+
+
+@app.get('/api/alerts/recent')
+def get_recent_alerts():
+    ros_bridge = get_ros_bridge()
+    if ros_bridge is None:
+        return {'ok': False, 'data': []}
+    return {'ok': True, 'data': ros_bridge.get_recent_alerts()}
+
 # 提交任务接口
 @app.post('/api/tasks')
 def submit_task(body: SubmitTaskBody):
@@ -73,6 +88,7 @@ def submit_task(body: SubmitTaskBody):
         return {'ok': False, 'message': 'ROS bridge not ready'}
 
     result = ros_bridge.submit_task(
+        # 这个位置增加请求id呢
         robot_id=body.robot_id,
         target_x=body.target_x,
         target_y=body.target_y,

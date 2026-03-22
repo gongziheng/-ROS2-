@@ -1,5 +1,7 @@
 import threading
 import time
+from collections import deque
+from datetime import datetime
 # 类型注释
 from typing import Dict, Any
 
@@ -28,6 +30,10 @@ class DashboardRosBridge(Node):
         }
 
         self.last_status_time = 0.0
+        # 记录历史数据
+        self.task_history = deque(maxlen=50)
+        self.alert_history = deque(maxlen=100)
+        self.active_alert_key = ''
 
         # 订阅机器人状态
         self.status_sub = self.create_subscription(
@@ -43,7 +49,11 @@ class DashboardRosBridge(Node):
             '/submit_task'
         )
 
+    def _now_str(self) -> str:
+        return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
     def status_callback(self, msg: RobotStatus):
+        prev_task_id = self.latest_status.get('task_id', '')
         self.latest_status = {
             'robot_id': msg.robot_id,
             'x': float(msg.x),
@@ -58,6 +68,72 @@ class DashboardRosBridge(Node):
             'alert_text': msg.alert_text
         }
         self.last_status_time = time.monotonic()
+        self._update_task_history(prev_task_id, self.latest_status)
+        self._update_alert_history(self.latest_status)
+
+    def _update_task_history(self, prev_task_id: str, status: Dict[str, Any]):
+        current_task_id = status.get('task_id', '')
+        current_mode = status.get('mode', '')
+
+        if current_task_id:
+            for item in self.task_history:
+                if item['task_id'] == current_task_id:
+                    item['status'] = 'running' if current_mode == 'moving' else current_mode
+                    return
+
+        if prev_task_id and not current_task_id:
+            for item in self.task_history:
+                if item['task_id'] == prev_task_id and item['status'] not in ('finished', 'failed'):
+                    item['status'] = 'finished'
+                    item['finished_at'] = self._now_str()
+                    return
+
+    def _push_alert(self, level: str, code: str, message: str, robot_id: str):
+        key = f'{robot_id}:{code}:{message}'
+        if self.active_alert_key == key:
+            return
+
+        self._resolve_alert()
+
+        self.active_alert_key = key
+        self.alert_history.appendleft({
+            'key': key,
+            'time': self._now_str(),
+            'robot_id': robot_id,
+            'level': level,
+            'code': code,
+            'message': message,
+            'active': True,
+        })
+
+    def _resolve_alert(self):
+        if not self.active_alert_key:
+            return
+        for item in self.alert_history:
+            if item['key'] == self.active_alert_key and item['active']:
+                item['active'] = False
+                item['recovered_at'] = self._now_str()
+                break
+        self.active_alert_key = ''
+
+    def _update_alert_history(self, status: Dict[str, Any]):
+        robot_id = status.get('robot_id', 'robot_1')
+        text = (status.get('alert_text') or '').strip()
+
+        if not status.get('is_online', True):
+            self._push_alert('critical', 'offline', text or 'ROS status timeout', robot_id)
+            return
+
+        battery = float(status.get('battery_pct', 100.0))
+        if battery < 20.0:
+            self._push_alert('warning', 'low_battery', f'Low battery: {battery:.1f}%', robot_id)
+            return
+
+        if text:
+            self._push_alert('warning', 'robot_alert', text, robot_id)
+            return
+
+        self._resolve_alert()
 
     def get_status_snapshot(self) -> Dict[str, Any]:
         snapshot = dict(self.latest_status)
@@ -68,7 +144,14 @@ class DashboardRosBridge(Node):
             snapshot['mode'] = 'offline'
             snapshot['alert_text'] = 'ROS status timeout'
             snapshot['task_id'] = snapshot.get('task_id', '')
+            self._push_alert('critical', 'offline', 'ROS status timeout', snapshot['robot_id'])
         return snapshot
+
+    def get_recent_tasks(self) -> List[Dict[str, Any]]:
+        return list(self.task_history)
+
+    def get_recent_alerts(self) -> List[Dict[str, Any]]:
+        return list(self.alert_history)
 
     # 给API 调用
     def submit_task(self, robot_id: str, target_x: float, target_y: float, task_type: str):
@@ -97,11 +180,24 @@ class DashboardRosBridge(Node):
                 'message': 'service call failed or time out'
             }
         res = future.result()
-        return {
+        result = {
             'accepted': bool(res.accepted),
             'task_id': res.task_id,
-            'message': res.message
+            'message': res.message,
         }
+
+        if result['accepted']:
+            self.task_history.appendleft({
+                'task_id': res.task_id,
+                'robot_id': robot_id,
+                'task_type': task_type,
+                'target': f'({target_x:.2f}, {target_y:.2f})',
+                'status': 'accepted',
+                'created_at': self._now_str(),
+            })
+
+        return result
+
 
         # 非阻塞
         # def request_callback(result_future):
