@@ -1,73 +1,122 @@
 #include "dashboardclient.h"
 
-#include <QAbstractSocket>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QJsonDocument>
+#include <QJsonParseError>
+#include <QAbstractSocket>
 
 DashboardClient::DashboardClient(QObject *parent)
     : QObject(parent)
     , m_http(new QNetworkAccessManager(this))
     , m_watchdog(new QTimer(this))
+    , m_reconnectTimer(new QTimer(this))
 {
     m_watchdog->setInterval(1000);
 
+    m_reconnectTimer->setInterval(2000);
+    m_reconnectTimer->setSingleShot(false);
+
+    connect(m_reconnectTimer, &QTimer::timeout, this, [this]() {
+        tryReconnect();
+    });
+
     connect(m_watchdog, &QTimer::timeout, this, [this]() {
-        if (m_connected && m_lastMessageTimer.isValid() && m_lastMessageTimer.elapsed() > 2000) {
+        if (m_connected &&
+            m_lastMessageTimer.isValid() &&
+            m_lastMessageTimer.elapsed() > 2000) {
+
             m_connected = false;
+            m_connecting = false;
+
             emit connectionChanged(false);
             emit logMessage("WebSocket status timeout.");
+
             emitOfflineStatus("WebSocket status timeout");
+            m_ws.close();
+            scheduleReconnect("watchdog timeout");
         }
     });
 
     m_watchdog->start();
 
-
     connect(&m_ws, &QWebSocket::connected, this, [this]() {
         m_connected = true;
+        m_connecting = false;
         m_lastMessageTimer.restart();
+
+        if (m_reconnectTimer->isActive()) {
+            m_reconnectTimer->stop();
+        }
+
         emit connectionChanged(true);
         emit logMessage("WebSocket connected.");
+
+        // 连上后立刻再拉一次当前状态，页面恢复更快
+        if (m_statusUrl.isValid()) {
+            requestCurrentStatus(m_statusUrl);
+        }
     });
 
     connect(&m_ws, &QWebSocket::disconnected, this, [this]() {
-        m_connected = false;
-        emit connectionChanged(false);
-        emit logMessage("WebSocket disconnected.");
-        emitOfflineStatus("WebSocket status timeout");
-    });
+        const bool wasAlive = m_connected || m_connecting;
 
-    connect(&m_ws, &QWebSocket::textMessageReceived,
-            this,
-            [this](const QString &message) {
-                m_lastMessageTimer.restart();
-                handleStatusPayload(message.toUtf8());
-            });
+        m_connected = false;
+        m_connecting = false;
+
+        if (wasAlive) {
+            emit connectionChanged(false);
+        }
+
+        emit logMessage("WebSocket disconnected.");
+        emitOfflineStatus("Dashboard API disconnected");
+        scheduleReconnect("websocket disconnected");
+    });
 
     connect(&m_ws,
             QOverload<QAbstractSocket::SocketError>::of(&QWebSocket::error),
             this,
             [this](QAbstractSocket::SocketError) {
+                m_connecting = false;
                 emit logMessage(QString("WebSocket error: %1").arg(m_ws.errorString()));
+
+                if (m_ws.state() == QAbstractSocket::UnconnectedState) {
+                    emitOfflineStatus(m_ws.errorString());
+                    scheduleReconnect(m_ws.errorString());
+                }
             });
+
+    connect(&m_ws, &QWebSocket::textMessageReceived, this, [this](const QString &message) {
+        m_lastMessageTimer.restart();
+        handleStatusPayload(message.toUtf8());
+    });
 }
 
 void DashboardClient::connectWebSocket(const QUrl &url)
 {
+    m_wsUrl = url;
+
+    if (m_ws.state() == QAbstractSocket::ConnectedState || m_connecting) {
+        return;
+    }
+
     emit logMessage(QString("Connecting WebSocket: %1").arg(url.toString()));
-    m_ws.open(url);
+    m_connecting = true;
+    m_ws.open(m_wsUrl);
 }
 
 void DashboardClient::disconnectWebSocket()
 {
+    m_reconnectTimer->stop();
+    m_connecting = false;
     m_ws.close();
 }
 
 void DashboardClient::requestCurrentStatus(const QUrl &url)
 {
+    m_statusUrl = url;
+
     QNetworkRequest request(url);
     QNetworkReply *reply = m_http->get(request);
 
@@ -76,7 +125,8 @@ void DashboardClient::requestCurrentStatus(const QUrl &url)
 
         if (reply->error() != QNetworkReply::NoError) {
             emit logMessage(QString("GET /api/status failed: %1").arg(reply->errorString()));
-            emitOfflineStatus("GET /api/status failed");
+            emitOfflineStatus("Dashboard API unavailable");
+            scheduleReconnect("http status failed");
             reply->deleteLater();
             return;
         }
@@ -125,7 +175,6 @@ void DashboardClient::handleStatusPayload(const QByteArray &payload)
 
     if (error.error != QJsonParseError::NoError || !doc.isObject()) {
         emit logMessage(QString("Status JSON parse failed: %1").arg(error.errorString()));
-        emitOfflineStatus("Status JSON parse failed");
         return;
     }
 
@@ -135,9 +184,11 @@ void DashboardClient::handleStatusPayload(const QByteArray &payload)
     // 1) /api/status -> { ok: true, data: {...} }
     // 2) /ws/status  -> {...}
     if (root.contains("data") && root.value("data").isObject()) {
-        emit statusUpdated(root.value("data").toObject());
+        m_lastStatus = root.value("data").toObject();
+        emit statusUpdated(m_lastStatus);
     } else {
-        emit statusUpdated(root);
+        m_lastStatus = root;
+        emit statusUpdated(m_lastStatus);
     }
 }
 
@@ -156,18 +207,43 @@ void DashboardClient::handleTaskPayload(const QByteArray &payload)
 
 void DashboardClient::emitOfflineStatus(const QString &reason)
 {
-    QJsonObject status;
-    status["robot_id"] = "robot_1";
-    status["x"] = 0.0;
-    status["y"] = 0.0;
-    status["yaw"] = 0.0;
-    status["linear_vel"] = 0.0;
-    status["angular_vel"] = 0.0;
-    status["battery_pct"] = 0.0;
-    status["mode"] = "offline";
-    status["task_id"] = "";
+    QJsonObject status = m_lastStatus;
+
+    if (!status.contains("robot_id")) status["robot_id"] = "robot_1";
+    if (!status.contains("x")) status["x"] = 0.0;
+    if (!status.contains("y")) status["y"] = 0.0;
+    if (!status.contains("yaw")) status["yaw"] = 0.0;
+    if (!status.contains("linear_vel")) status["linear_vel"] = 0.0;
+    if (!status.contains("angular_vel")) status["angular_vel"] = 0.0;
+    if (!status.contains("battery_pct")) status["battery_pct"] = 0.0;
+    if (!status.contains("task_id")) status["task_id"] = "";
+
     status["is_online"] = false;
+    status["mode"] = "offline";
     status["alert_text"] = reason;
 
     emit statusUpdated(status);
+}
+
+void DashboardClient::scheduleReconnect(const QString &reason)
+{
+    if (!m_reconnectTimer->isActive()) {
+        emit logMessage(QString("Start reconnect loop: %1").arg(reason));
+        m_reconnectTimer->start();
+    }
+}
+
+void DashboardClient::tryReconnect()
+{
+    if (m_statusUrl.isValid()) {
+        requestCurrentStatus(m_statusUrl);
+    }
+
+    if (m_wsUrl.isValid() &&
+        m_ws.state() == QAbstractSocket::UnconnectedState &&
+        !m_connecting) {
+        emit logMessage(QString("Retry WebSocket: %1").arg(m_wsUrl.toString()));
+        m_connecting = true;
+        m_ws.open(m_wsUrl);
+    }
 }

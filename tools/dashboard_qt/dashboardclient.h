@@ -41,13 +41,21 @@ private:
     // 处理发布任务的回调
     void handleTaskPayload(const QByteArray &payload);
     void emitOfflineStatus(const QString &reason);
+    // 断线重连
+    void tryReconnect();
+    void scheduleReconnect(const QString &reason);
 
 private:
     QNetworkAccessManager *m_http = nullptr;
     QWebSocket m_ws;
     QTimer *m_watchdog = nullptr;
+    QTimer *m_reconnectTimer = nullptr;
     QElapsedTimer m_lastMessageTimer;
+    QUrl m_statusUrl;
+    QUrl m_wsUrl;
+    QJsonObject m_lastStatus;
     bool m_connected = false;
+    bool m_connecting = false;
 };
 
 
