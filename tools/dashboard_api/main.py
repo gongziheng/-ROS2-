@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse
 # 第三方库 数据模型 定义请求体的数据结构
 from pydantic import BaseModel
 
-from ros_bridge import start_ros_bridge, get_ros_bridge
+from ros_bridge import start_ros_bridge, stop_ros_bridge, get_ros_bridge
 
 # 请求体模型 BaseModel用来（1）自动解析json （2）检查字段是否齐全 （3）检查类型是否合理
 # 定义提交任务接口的输入格式
@@ -24,7 +24,10 @@ class SubmitTaskBody(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     start_ros_bridge()
-    yield
+    try:
+        yield
+    finally:
+        stop_ros_bridge()
 
 # 创建FastAPI对象（服务名字， 生命周期函数）
 app = FastAPI(title='Robot Platform Dashboard API', lifespan=lifespan)

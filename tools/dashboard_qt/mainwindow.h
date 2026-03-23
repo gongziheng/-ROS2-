@@ -7,12 +7,12 @@
 
 class QButtonGroup;
 class QPushButton;
+class QTimer;
 
 class OverviewPage;
 class TasksPage;
 class AlertsPage;
 class SettingsPage;
-
 class DashboardClient;
 
 QT_BEGIN_NAMESPACE
@@ -63,12 +63,15 @@ private:
     DashboardClient *m_client = nullptr;
 
     QButtonGroup *m_navGroup = nullptr;
+    QTimer *m_historyTimer = nullptr;
 
     bool m_pressed = false;
     QPoint m_point;
 
     QUrl m_statusUrl = QUrl("http://127.0.0.1:8000/api/status");
     QUrl m_taskUrl = QUrl("http://127.0.0.1:8000/api/tasks");
+    QUrl m_recentTasksUrl = QUrl("http://127.0.0.1:8000/api/tasks/recent");
+    QUrl m_recentAlertsUrl = QUrl("http://127.0.0.1:8000/api/alerts/recent");
     QUrl m_wsUrl = QUrl("ws://127.0.0.1:8000/ws/status");
 };
 

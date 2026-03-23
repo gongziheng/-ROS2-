@@ -1,11 +1,11 @@
 #include "dashboardclient.h"
 
+#include <QAbstractSocket>
+#include <QJsonDocument>
+#include <QJsonParseError>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
-#include <QJsonDocument>
-#include <QJsonParseError>
-#include <QAbstractSocket>
 
 DashboardClient::DashboardClient(QObject *parent)
     : QObject(parent)
@@ -53,7 +53,6 @@ DashboardClient::DashboardClient(QObject *parent)
         emit connectionChanged(true);
         emit logMessage("WebSocket connected.");
 
-        // 连上后立刻再拉一次当前状态，页面恢复更快
         if (m_statusUrl.isValid()) {
             requestCurrentStatus(m_statusUrl);
         }
@@ -136,6 +135,44 @@ void DashboardClient::requestCurrentStatus(const QUrl &url)
     });
 }
 
+void DashboardClient::requestRecentTasks(const QUrl &url)
+{
+    QNetworkRequest request(url);
+    QNetworkReply *reply = m_http->get(request);
+
+    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        const QByteArray payload = reply->readAll();
+
+        if (reply->error() != QNetworkReply::NoError) {
+            emit logMessage(QString("GET /api/tasks/recent failed: %1").arg(reply->errorString()));
+            reply->deleteLater();
+            return;
+        }
+
+        handleRecentTasksPayload(payload);
+        reply->deleteLater();
+    });
+}
+
+void DashboardClient::requestRecentAlerts(const QUrl &url)
+{
+    QNetworkRequest request(url);
+    QNetworkReply *reply = m_http->get(request);
+
+    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        const QByteArray payload = reply->readAll();
+
+        if (reply->error() != QNetworkReply::NoError) {
+            emit logMessage(QString("GET /api/alerts/recent failed: %1").arg(reply->errorString()));
+            reply->deleteLater();
+            return;
+        }
+
+        handleRecentAlertsPayload(payload);
+        reply->deleteLater();
+    });
+}
+
 void DashboardClient::submitTask(const QUrl &url,
                                  const QString &robotId,
                                  double targetX,
@@ -180,15 +217,44 @@ void DashboardClient::handleStatusPayload(const QByteArray &payload)
 
     const QJsonObject root = doc.object();
 
-    // 兼容两种格式：
-    // 1) /api/status -> { ok: true, data: {...} }
-    // 2) /ws/status  -> {...}
     if (root.contains("data") && root.value("data").isObject()) {
         m_lastStatus = root.value("data").toObject();
         emit statusUpdated(m_lastStatus);
     } else {
         m_lastStatus = root;
         emit statusUpdated(m_lastStatus);
+    }
+}
+
+void DashboardClient::handleRecentTasksPayload(const QByteArray &payload)
+{
+    QJsonParseError error;
+    const QJsonDocument doc = QJsonDocument::fromJson(payload, &error);
+
+    if (error.error != QJsonParseError::NoError || !doc.isObject()) {
+        emit logMessage(QString("Tasks JSON parse failed: %1").arg(error.errorString()));
+        return;
+    }
+
+    const QJsonObject root = doc.object();
+    if (root.contains("data") && root.value("data").isArray()) {
+        emit recentTasksUpdated(root.value("data").toArray());
+    }
+}
+
+void DashboardClient::handleRecentAlertsPayload(const QByteArray &payload)
+{
+    QJsonParseError error;
+    const QJsonDocument doc = QJsonDocument::fromJson(payload, &error);
+
+    if (error.error != QJsonParseError::NoError || !doc.isObject()) {
+        emit logMessage(QString("Alerts JSON parse failed: %1").arg(error.errorString()));
+        return;
+    }
+
+    const QJsonObject root = doc.object();
+    if (root.contains("data") && root.value("data").isArray()) {
+        emit recentAlertsUpdated(root.value("data").toArray());
     }
 }
 

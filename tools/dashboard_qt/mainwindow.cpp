@@ -1,19 +1,22 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include "overviewpage.h"
-#include "taskspage.h"
 #include "alertspage.h"
-#include "settingspage.h"
 #include "dashboardclient.h"
+#include "overviewpage.h"
+#include "settingspage.h"
+#include "taskspage.h"
 
 #include <QButtonGroup>
 #include <QEvent>
 #include <QGuiApplication>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QMouseEvent>
 #include <QPushButton>
 #include <QScreen>
 #include <QStatusBar>
+#include <QTimer>
 #include <QWidget>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -82,10 +85,8 @@ void MainWindow::setupConnections()
 
 void MainWindow::setupWindowBehavior()
 {
-    // 1) 标题栏本体
     ui->titleBar->installEventFilter(this);
 
-    // 2) 标题栏里面所有非按钮子控件，也都纳入拖动区域
     const auto titleChildren = ui->titleBar->findChildren<QWidget *>();
     for (QWidget *w : titleChildren) {
         if (w == ui->btnWindowMinimize ||
@@ -97,23 +98,34 @@ void MainWindow::setupWindowBehavior()
     }
 
     m_client = new DashboardClient(this);
+    m_historyTimer = new QTimer(this);
+    m_historyTimer->setInterval(1500);
 
-    // 页面 -> 网络
+    connect(m_historyTimer, &QTimer::timeout, this, [this]() {
+        m_client->requestRecentTasks(m_recentTasksUrl);
+        m_client->requestRecentAlerts(m_recentAlertsUrl);
+    });
+
     connect(m_tasksPage, &TasksPage::submitRequested,
             this,
             [this](const QString &robotId, double x, double y, const QString &taskType) {
                 appendLog(QString("提交任务: robot=%1, x=%2, y=%3, type=%4")
-                            .arg(robotId)
-                            .arg(x, 0, 'f', 2)
-                            .arg(y, 0, 'f', 2)
-                            .arg(taskType));
+                              .arg(robotId)
+                              .arg(x, 0, 'f', 2)
+                              .arg(y, 0, 'f', 2)
+                              .arg(taskType));
                 m_tasksPage->appendLog("正在提交任务...");
                 m_client->submitTask(m_taskUrl, robotId, x, y, taskType);
             });
 
-    // 网络 -> 页面
     connect(m_client, &DashboardClient::statusUpdated,
             m_overviewPage, &OverviewPage::updateStatus);
+
+    connect(m_client, &DashboardClient::recentTasksUpdated,
+            m_tasksPage, &TasksPage::updateRecentTasks);
+
+    connect(m_client, &DashboardClient::recentAlertsUpdated,
+            m_alertsPage, &AlertsPage::updateRecentAlerts);
 
     connect(m_client, &DashboardClient::taskSubmitted,
             this,
@@ -124,11 +136,12 @@ void MainWindow::setupWindowBehavior()
                 const QString taskId = data.value("task_id").toString();
 
                 const QString line = QString("任务返回: ok=%1, task_id=%2, message=%3")
-                                        .arg(ok ? "true" : "false")
-                                        .arg(taskId)
-                                        .arg(message);
+                                         .arg(ok ? "true" : "false")
+                                         .arg(taskId)
+                                         .arg(message);
 
                 appendLog(line);
+                m_client->requestRecentTasks(m_recentTasksUrl);
             });
 
     connect(m_client, &DashboardClient::connectionChanged,
@@ -146,9 +159,11 @@ void MainWindow::setupWindowBehavior()
                 appendLog(text);
             });
 
-    // 启动时先拉一次当前状态，再连 WebSocket
     m_client->requestCurrentStatus(m_statusUrl);
+    m_client->requestRecentTasks(m_recentTasksUrl);
+    m_client->requestRecentAlerts(m_recentAlertsUrl);
     m_client->connectWebSocket(m_wsUrl);
+    m_historyTimer->start();
 }
 
 void MainWindow::adaptToScreen()
@@ -219,6 +234,7 @@ void MainWindow::onNavTasksClicked()
 {
     ui->stackedPages->setCurrentWidget(m_tasksPage);
     syncNavButtons(ui->btnNavTasks);
+    m_client->requestRecentTasks(m_recentTasksUrl);
     appendLog("Switch to Tasks page.");
 }
 
@@ -226,6 +242,7 @@ void MainWindow::onNavAlertsClicked()
 {
     ui->stackedPages->setCurrentWidget(m_alertsPage);
     syncNavButtons(ui->btnNavAlerts);
+    m_client->requestRecentAlerts(m_recentAlertsUrl);
     appendLog("Switch to Alerts page.");
 }
 

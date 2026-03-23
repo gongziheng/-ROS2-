@@ -1,7 +1,8 @@
 import math
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Point
+# from geometry_msgs.msg import Point
+from robot_platform_interfaces.msg import TaskCommand
 from robot_platform_interfaces.msg import RobotStatus
 
 # 机器人根据机器人任务管理器发布的位置信息移动，并定时发布当前的位置信息
@@ -36,21 +37,23 @@ class FakeRobotNode(Node):
         self.get_logger().info(f'Fake robot node started. {self.robot_id}')
 
     def task_callback(self, msg: TaskCommand):
-        self.target_x = float(msg.x)
-        self.target_y = float(msg.y)
+        self.target_x = float(msg.target_x)
+        self.target_y = float(msg.target_y)
         self.task_id = msg.task_id
         self.task_type = msg.task_type
         self.mode = 'moving'
 
         self.get_logger().info(
-            f'Received goal: ({self.target_x:.2f}, {self.target_y:.2f})'
+            f'Received task: id={self.task_id}, type={self.task_type}, '
+            f'goal=({self.target_x:.2f}, {self.target_y:.2f})'
         )
 
     def on_timer(self):
         dt = 0.1
         speed = 0.5
-        # if self.target_x is not Node and self.target_y is not None:
-        if None not in(self.target_x, self.target_y):
+
+        if self.target_x is not Node and self.target_y is not None:
+        # if None not in(self.target_x, self.target_y):
             dx = self.target_x - self.x
             dy = self.target_y - self.y
             dist = math.hypot(dx, dy)   # 等价于 sqrt(x*x + y*y)

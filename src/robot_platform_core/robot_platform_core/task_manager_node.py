@@ -23,6 +23,13 @@ class TaskManagerNode(Node):
         self.get_logger().info('Task manager node started.')
 
     def handle_submit_task(self, request, response):
+        # 判断机器人Id是否为空
+        if not request.robot_id.strip():
+            response.accepted = False
+            response.task_id = ''
+            response.message = 'robot_id is required'
+            return response
+
         # time.time()获取当前时间的时间戳(python)
         # 创建一个任务ID
         task_id = f'{request.task_type}_{int(time.time())}'
@@ -47,7 +54,8 @@ class TaskManagerNode(Node):
         )
 
         self.get_logger().info(
-            f'Accepted task{task_id} for {request.robot_id}'
+            f'Accepted task={task_id} robot={request.robot_id} '
+            f'goal=({request.target_x:.2f}, {request.target_y:.2f})'
         )
         return response
 
