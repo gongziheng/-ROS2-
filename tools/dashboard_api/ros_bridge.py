@@ -49,6 +49,31 @@ class DashboardRosBridge(Node):
     def _now_str(self) -> str:
         return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+    def _append_task_history_item(
+        self,
+        *,
+        task_id: str,
+        robot_id: str,
+        task_type: str,
+        target_x: float,
+        target_y: float,
+        status: str,
+        message: str,
+    ) -> None:
+        now = self._now_str()
+        self.task_history.appendleft({
+            'task_id': task_id,
+            'robot_id': robot_id,
+            'task_type': task_type,
+            'target_x': float(target_x),
+            'target_y': float(target_y),
+            'target': f'({target_x:.2f}, {target_y:.2f})',
+            'status': status,
+            'message': message,
+            'created_at': now,
+            'updated_at': now,
+        })
+
     def status_callback(self, msg: RobotStatus):
         now = time.monotonic()
         dt = 0.0 if self.last_status_monotonic == 0.0 else max(0.0, now - self.last_status_monotonic)
@@ -170,69 +195,92 @@ class DashboardRosBridge(Node):
     def get_recent_alerts(self) -> List[Dict[str, Any]]:
         return list(self.alert_history)
 
-def submit_task(self, robot_id: str, target_x: float, target_y: float, task_type: str) -> Dict[str, Any]:
-    if not self.task_client.wait_for_service(timeout_sec=2.0):
-        return {
-            'accepted': False,
-            'task_id': '',
-            'message': 'submit_task service not available',
-        }
+    def submit_task(self, robot_id: str, target_x: float, target_y: float, task_type: str) -> Dict[str, Any]:
+        if not self.task_client.wait_for_service(timeout_sec=2.0):
+            self._append_task_history_item(
+                task_id='',
+                robot_id=robot_id,
+                task_type=task_type,
+                target_x=target_x,
+                target_y=target_y,
+                status='service_unavailable',
+                message='submit_task service not available',
+            )
+            return {
+                'accepted': False,
+                'task_id': '',
+                'message': 'submit_task service not available',
+            }
 
-    req = SubmitTask.Request()
-    req.robot_id = robot_id
-    req.target_x = float(target_x)
-    req.target_y = float(target_y)
-    req.task_type = task_type
+        req = SubmitTask.Request()
+        req.robot_id = robot_id
+        req.target_x = float(target_x)
+        req.target_y = float(target_y)
+        req.task_type = task_type
 
-    future = self.task_client.call_async(req)
+        future = self.task_client.call_async(req)
+        done_event = threading.Event()
+        result_holder = {'result': None}
 
-    done_event = threading.Event()
-    result_holder = {'result': None}
+        def _done_callback(fut):
+            try:
+                result_holder['result'] = fut.result()
+            except Exception:
+                result_holder['result'] = None
+            finally:
+                done_event.set()
 
-    def _done_callback(fut):
-        try:
-            result_holder['result'] = fut.result()
-        except Exception:
-            result_holder['result'] = None
-        finally:
-            done_event.set()
+        future.add_done_callback(_done_callback)
 
-    future.add_done_callback(_done_callback)
+        if not done_event.wait(timeout=3.0):
+            self._append_task_history_item(
+                task_id='',
+                robot_id=robot_id,
+                task_type=task_type,
+                target_x=target_x,
+                target_y=target_y,
+                status='timeout',
+                message='service call timeout',
+            )
+            return {
+                'accepted': False,
+                'task_id': '',
+                'message': 'service call timeout',
+            }
 
-    if not done_event.wait(timeout=3.0):
-        return {
-            'accepted': False,
-            'task_id': '',
-            'message': 'service call timeout',
-        }
+        res = result_holder['result']
+        if res is None:
+            self._append_task_history_item(
+                task_id='',
+                robot_id=robot_id,
+                task_type=task_type,
+                target_x=target_x,
+                target_y=target_y,
+                status='failed',
+                message='service call failed',
+            )
+            return {
+                'accepted': False,
+                'task_id': '',
+                'message': 'service call failed',
+            }
 
-    res = result_holder['result']
-    if res is None:
-        return {
-            'accepted': False,
-            'task_id': '',
-            'message': 'service call failed',
-        }
-
-    result = {
-        'accepted': bool(res.accepted),
-        'task_id': res.task_id,
-        'message': res.message,
-    }
-
-    if result['accepted']:
-        self.task_history.appendleft({
+        result = {
+            'accepted': bool(res.accepted),
             'task_id': res.task_id,
-            'robot_id': robot_id,
-            'task_type': task_type,
-            'target_x': float(target_x),
-            'target_y': float(target_y),
-            'target': f'({target_x:.2f}, {target_y:.2f})',
-            'status': 'accepted',
-            'created_at': self._now_str(),
-        })
+            'message': res.message,
+        }
 
-    return result
+        self._append_task_history_item(
+            task_id=res.task_id,
+            robot_id=robot_id,
+            task_type=task_type,
+            target_x=target_x,
+            target_y=target_y,
+            status='accepted' if result['accepted'] else 'rejected',
+            message=res.message,
+        )
+        return result
 
 
 _ros_node = None

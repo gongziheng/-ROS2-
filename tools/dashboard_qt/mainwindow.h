@@ -27,7 +27,7 @@ class MainWindow : public QMainWindow
 
 public:
     MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    ~MainWindow() override;
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
@@ -37,7 +37,6 @@ private slots:
     void onNavTasksClicked();
     void onNavAlertsClicked();
     void onNavSettingsClicked();
-
     void onWindowMinClicked();
     void onWindowMaxClicked();
     void onWindowCloseClicked();
@@ -53,6 +52,10 @@ private:
     void syncNavButtons(QPushButton *activeButton);
     void appendLog(const QString &text);
 
+    QString apiBaseUrlFromStatusUrl() const;
+    void applyEndpoints(const QString &apiBaseUrl, const QString &wsUrl);
+    void refreshDashboardData();
+
 private:
     Ui::MainWindow *ui = nullptr;
 
@@ -60,8 +63,8 @@ private:
     TasksPage *m_tasksPage = nullptr;
     AlertsPage *m_alertsPage = nullptr;
     SettingsPage *m_settingsPage = nullptr;
-    DashboardClient *m_client = nullptr;
 
+    DashboardClient *m_client = nullptr;
     QButtonGroup *m_navGroup = nullptr;
     QTimer *m_statusTimer = nullptr;
     QTimer *m_historyTimer = nullptr;

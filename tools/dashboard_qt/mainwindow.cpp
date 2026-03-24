@@ -10,8 +10,6 @@
 #include <QButtonGroup>
 #include <QEvent>
 #include <QGuiApplication>
-#include <QJsonArray>
-#include <QJsonObject>
 #include <QMouseEvent>
 #include <QPushButton>
 #include <QScreen>
@@ -55,6 +53,8 @@ void MainWindow::setupPages()
     ui->stackedPages->addWidget(m_tasksPage);
     ui->stackedPages->addWidget(m_alertsPage);
     ui->stackedPages->addWidget(m_settingsPage);
+
+    m_settingsPage->setEndpoints(QUrl(apiBaseUrlFromStatusUrl()), m_wsUrl);
 }
 
 void MainWindow::setupConnections()
@@ -81,12 +81,16 @@ void MainWindow::setupConnections()
             this, &MainWindow::onWindowMaxClicked);
     connect(ui->btnWindowClose, &QPushButton::clicked,
             this, &MainWindow::onWindowCloseClicked);
+
+    connect(m_settingsPage, &SettingsPage::endpointsApplied,
+            this, [this](const QString &apiBaseUrl, const QString &wsUrl) {
+        applyEndpoints(apiBaseUrl, wsUrl);
+    });
 }
 
 void MainWindow::setupWindowBehavior()
 {
     ui->titleBar->installEventFilter(this);
-
     const auto titleChildren = ui->titleBar->findChildren<QWidget *>();
     for (QWidget *w : titleChildren) {
         if (w == ui->btnWindowMinimize ||
@@ -100,7 +104,7 @@ void MainWindow::setupWindowBehavior()
     m_client = new DashboardClient(this);
 
     m_statusTimer = new QTimer(this);
-    m_statusTimer->setInterval(300);
+    m_statusTimer->setInterval(1000);
 
     m_historyTimer = new QTimer(this);
     m_historyTimer->setInterval(1500);
@@ -108,7 +112,6 @@ void MainWindow::setupWindowBehavior()
     connect(m_statusTimer, &QTimer::timeout, this, [this]() {
         m_client->requestCurrentStatus(m_statusUrl);
     });
-
 
     connect(m_historyTimer, &QTimer::timeout, this, [this]() {
         m_client->requestRecentTasks(m_recentTasksUrl);
@@ -118,14 +121,15 @@ void MainWindow::setupWindowBehavior()
     connect(m_tasksPage, &TasksPage::submitRequested,
             this,
             [this](const QString &robotId, double x, double y, const QString &taskType) {
-                appendLog(QString("提交任务: robot=%1, x=%2, y=%3, type=%4")
-                              .arg(robotId)
-                              .arg(x, 0, 'f', 2)
-                              .arg(y, 0, 'f', 2)
-                              .arg(taskType));
-                m_tasksPage->appendLog("正在提交任务...");
-                m_client->submitTask(m_taskUrl, robotId, x, y, taskType);
-            });
+        appendLog(QString("提交任务: robot=%1, x=%2, y=%3, type=%4")
+                  .arg(robotId)
+                  .arg(x, 0, 'f', 2)
+                  .arg(y, 0, 'f', 2)
+                  .arg(taskType));
+
+        m_tasksPage->appendLog("正在提交任务...");
+        m_client->submitTask(m_taskUrl, robotId, x, y, taskType);
+    });
 
     connect(m_client, &DashboardClient::statusUpdated,
             m_overviewPage, &OverviewPage::updateStatus);
@@ -139,42 +143,49 @@ void MainWindow::setupWindowBehavior()
     connect(m_client, &DashboardClient::taskSubmitted,
             this,
             [this](const QJsonObject &result) {
-                const bool apiOk = result.value("ok").toBool();
-                const QJsonObject data = result.value("data").toObject();
-                const bool accepted = data.value("accepted").toBool();
-                const QString message = data.value("message").toString();
-                const QString taskId = data.value("task_id").toString();
+        const bool apiOk = result.value("ok").toBool();
+        const QJsonObject data = result.value("data").toObject();
+        const bool accepted = data.value("accepted").toBool();
+        const QString message = data.value("message").toString();
+        const QString taskId = data.value("task_id").toString();
 
-                const QString line = QString("任务返回: api_ok=%1, accepted=%2, task_id=%3, message=%4")
-                        .arg(apiOk ? "true" : "false")
-                        .arg(accepted ? "true" : "false")
-                        .arg(taskId)
-                        .arg(message);
-                appendLog(line);
-                m_client->requestCurrentStatus(m_statusUrl);
-                m_client->requestRecentTasks(m_recentTasksUrl);
-                m_client->requestRecentAlerts(m_recentAlertsUrl);
-            });
+        const QString line = QString("任务返回: api_ok=%1, accepted=%2, task_id=%3, message=%4")
+                                 .arg(apiOk ? "true" : "false")
+                                 .arg(accepted ? "true" : "false")
+                                 .arg(taskId)
+                                 .arg(message);
+        appendLog(line);
+
+        refreshDashboardData();
+    });
 
     connect(m_client, &DashboardClient::connectionChanged,
             this,
             [this](bool connected) {
-                appendLog(connected ? "WebSocket 已连接" : "WebSocket 已断开");
-                if (!connected) {
-                    m_client->requestCurrentStatus(m_statusUrl);
-                }
-            });
+        appendLog(connected ? "WebSocket 已连接" : "WebSocket 已断开");
+
+        if (connected) {
+            if (m_statusTimer->isActive()) {
+                m_statusTimer->stop();
+            }
+        } else {
+            m_client->requestCurrentStatus(m_statusUrl);
+            if (!m_statusTimer->isActive()) {
+                m_statusTimer->start();
+            }
+        }
+    });
 
     connect(m_client, &DashboardClient::logMessage,
             this,
             [this](const QString &text) {
-                appendLog(text);
-            });
+        appendLog(text);
+    });
 
-    m_client->requestCurrentStatus(m_statusUrl);
-    m_client->requestRecentTasks(m_recentTasksUrl);
-    m_client->requestRecentAlerts(m_recentAlertsUrl);
+    refreshDashboardData();
     m_client->connectWebSocket(m_wsUrl);
+
+    // 启动时先开轮询兜底，等 WS 真连上后自动停掉
     m_statusTimer->start();
     m_historyTimer->start();
 }
@@ -188,7 +199,6 @@ void MainWindow::adaptToScreen()
     }
 
     const QRect available = screen->availableGeometry();
-
     int targetWidth = qMin(1440, int(available.width() * 0.92));
     int targetHeight = qMin(900, int(available.height() * 0.90));
 
@@ -212,11 +222,9 @@ bool MainWindow::isTitleDragTarget(QObject *obj) const
     if (!w || !ui->titleBar) {
         return false;
     }
-
     if (isWindowControlButton(obj)) {
         return false;
     }
-
     return (w == ui->titleBar) || ui->titleBar->isAncestorOf(w);
 }
 
@@ -230,10 +238,72 @@ void MainWindow::syncNavButtons(QPushButton *activeButton)
 void MainWindow::appendLog(const QString &text)
 {
     statusBar()->showMessage(text, 3000);
-
     if (m_tasksPage) {
         m_tasksPage->appendLog(text);
     }
+}
+
+QString MainWindow::apiBaseUrlFromStatusUrl() const
+{
+    QString text = m_statusUrl.toString();
+    const QString suffix = "/api/status";
+    if (text.endsWith(suffix)) {
+        text.chop(suffix.size());
+    }
+    return text;
+}
+
+void MainWindow::applyEndpoints(const QString &apiBaseUrl, const QString &wsUrl)
+{
+    QString normalizedApiBase = apiBaseUrl.trimmed();
+    QString normalizedWsUrl = wsUrl.trimmed();
+
+    while (normalizedApiBase.endsWith('/')) {
+        normalizedApiBase.chop(1);
+    }
+    while (normalizedWsUrl.endsWith('/')) {
+        normalizedWsUrl.chop(1);
+    }
+
+    const QUrl newStatusUrl(normalizedApiBase + "/api/status");
+    const QUrl newTaskUrl(normalizedApiBase + "/api/tasks");
+    const QUrl newRecentTasksUrl(normalizedApiBase + "/api/tasks/recent");
+    const QUrl newRecentAlertsUrl(normalizedApiBase + "/api/alerts/recent");
+    const QUrl newWsUrl(normalizedWsUrl);
+
+    if (!newStatusUrl.isValid() || !newTaskUrl.isValid() ||
+        !newRecentTasksUrl.isValid() || !newRecentAlertsUrl.isValid() ||
+        !newWsUrl.isValid()) {
+        appendLog("连接配置无效，请检查 API / WS 地址格式。");
+        return;
+    }
+
+    m_statusUrl = newStatusUrl;
+    m_taskUrl = newTaskUrl;
+    m_recentTasksUrl = newRecentTasksUrl;
+    m_recentAlertsUrl = newRecentAlertsUrl;
+    m_wsUrl = newWsUrl;
+
+    m_settingsPage->setEndpoints(QUrl(normalizedApiBase), m_wsUrl);
+
+    appendLog(QString("已应用连接配置: api=%1, ws=%2")
+              .arg(normalizedApiBase, normalizedWsUrl));
+
+    m_client->disconnectWebSocket();
+
+    if (!m_statusTimer->isActive()) {
+        m_statusTimer->start();
+    }
+
+    refreshDashboardData();
+    m_client->connectWebSocket(m_wsUrl);
+}
+
+void MainWindow::refreshDashboardData()
+{
+    m_client->requestCurrentStatus(m_statusUrl);
+    m_client->requestRecentTasks(m_recentTasksUrl);
+    m_client->requestRecentAlerts(m_recentAlertsUrl);
 }
 
 void MainWindow::onNavOverviewClicked()
@@ -299,7 +369,6 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
         auto *mouseEvent = static_cast<QMouseEvent *>(event);
         if (mouseEvent->button() == Qt::LeftButton) {
             m_point = mouseEvent->globalPos();
-
             if (!(windowState() & Qt::WindowMaximized)) {
                 m_pressed = true;
             }
