@@ -98,8 +98,17 @@ void MainWindow::setupWindowBehavior()
     }
 
     m_client = new DashboardClient(this);
+
+    m_statusTimer = new QTimer(this);
+    m_statusTimer->setInterval(300);
+
     m_historyTimer = new QTimer(this);
     m_historyTimer->setInterval(1500);
+
+    connect(m_statusTimer, &QTimer::timeout, this, [this]() {
+        m_client->requestCurrentStatus(m_statusUrl);
+    });
+
 
     connect(m_historyTimer, &QTimer::timeout, this, [this]() {
         m_client->requestRecentTasks(m_recentTasksUrl);
@@ -141,7 +150,9 @@ void MainWindow::setupWindowBehavior()
                                          .arg(message);
 
                 appendLog(line);
+                m_client->requestCurrentStatus(m_statusUrl);
                 m_client->requestRecentTasks(m_recentTasksUrl);
+                m_client->requestRecentAlerts(m_recentAlertsUrl);
             });
 
     connect(m_client, &DashboardClient::connectionChanged,
@@ -163,6 +174,7 @@ void MainWindow::setupWindowBehavior()
     m_client->requestRecentTasks(m_recentTasksUrl);
     m_client->requestRecentAlerts(m_recentAlertsUrl);
     m_client->connectWebSocket(m_wsUrl);
+    m_statusTimer->start();
     m_historyTimer->start();
 }
 

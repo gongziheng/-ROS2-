@@ -1,6 +1,7 @@
 #include "overviewpage.h"
 #include "ui_overview_page.h"
 
+#include <cmath>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPainter>

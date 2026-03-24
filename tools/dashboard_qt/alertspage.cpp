@@ -6,6 +6,7 @@
 #include <QHeaderView>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QJsonObject>
 
 AlertsPage::AlertsPage(QWidget *parent)
     : QWidget(parent)

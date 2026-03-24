@@ -10,6 +10,7 @@
 #include <QPushButton>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QJsonObject>
 
 TasksPage::TasksPage(QWidget *parent)
     : QWidget(parent)

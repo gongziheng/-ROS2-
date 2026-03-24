@@ -31,9 +31,8 @@ DashboardClient::DashboardClient(QObject *parent)
             m_connecting = false;
 
             emit connectionChanged(false);
-            emit logMessage("WebSocket status timeout.");
-
-            emitOfflineStatus("WebSocket status timeout");
+            emit logMessage("WebSocket status timeout, fallback to HTTP polling.");
+            
             m_ws.close();
             scheduleReconnect("watchdog timeout");
         }

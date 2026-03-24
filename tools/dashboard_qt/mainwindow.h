@@ -63,6 +63,7 @@ private:
     DashboardClient *m_client = nullptr;
 
     QButtonGroup *m_navGroup = nullptr;
+    QTimer *m_statusTimer = nullptr;
     QTimer *m_historyTimer = nullptr;
 
     bool m_pressed = false;

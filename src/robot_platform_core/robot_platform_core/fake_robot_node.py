@@ -82,7 +82,7 @@ class FakeRobotNode(Node):
             self.angular_vel = 0.0
             self.mode = 'idle'
 
-        self.battery_pct = max(0.0, self.battery_pct - 0.01)
+        self.battery_pct = max(0.0, self.battery_pct - 0.001)
 
         status = RobotStatus()
         status.stamp = self.get_clock().now().to_msg()
