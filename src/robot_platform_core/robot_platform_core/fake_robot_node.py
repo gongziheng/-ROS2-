@@ -52,7 +52,7 @@ class FakeRobotNode(Node):
         dt = 0.1
         speed = 0.5
 
-        if self.target_x is not Node and self.target_y is not None:
+        if self.target_x is not None and self.target_y is not None:
         # if None not in(self.target_x, self.target_y):
             dx = self.target_x - self.x
             dy = self.target_y - self.y

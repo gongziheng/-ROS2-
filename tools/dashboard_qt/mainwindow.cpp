@@ -139,16 +139,17 @@ void MainWindow::setupWindowBehavior()
     connect(m_client, &DashboardClient::taskSubmitted,
             this,
             [this](const QJsonObject &result) {
-                const bool ok = result.value("ok").toBool();
+                const bool apiOk = result.value("ok").toBool();
                 const QJsonObject data = result.value("data").toObject();
+                const bool accepted = data.value("accepted").toBool();
                 const QString message = data.value("message").toString();
                 const QString taskId = data.value("task_id").toString();
 
-                const QString line = QString("任务返回: ok=%1, task_id=%2, message=%3")
-                                         .arg(ok ? "true" : "false")
-                                         .arg(taskId)
-                                         .arg(message);
-
+                const QString line = QString("任务返回: api_ok=%1, accepted=%2, task_id=%3, message=%4")
+                        .arg(apiOk ? "true" : "false")
+                        .arg(accepted ? "true" : "false")
+                        .arg(taskId)
+                        .arg(message);
                 appendLog(line);
                 m_client->requestCurrentStatus(m_statusUrl);
                 m_client->requestRecentTasks(m_recentTasksUrl);

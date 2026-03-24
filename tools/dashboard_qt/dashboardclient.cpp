@@ -32,7 +32,7 @@ DashboardClient::DashboardClient(QObject *parent)
 
             emit connectionChanged(false);
             emit logMessage("WebSocket status timeout, fallback to HTTP polling.");
-            
+
             m_ws.close();
             scheduleReconnect("watchdog timeout");
         }
@@ -206,11 +206,13 @@ void DashboardClient::submitTask(const QUrl &url,
 
 void DashboardClient::handleStatusPayload(const QByteArray &payload)
 {
+    emit logMessage(QString("[DEBUG] raw payload: %1").arg(QString::fromUtf8(payload)));
+
     QJsonParseError error;
     const QJsonDocument doc = QJsonDocument::fromJson(payload, &error);
 
     if (error.error != QJsonParseError::NoError || !doc.isObject()) {
-        emit logMessage(QString("Status JSON parse failed: %1").arg(error.errorString()));
+        emit logMessage(QString("[DEBUG] Status JSON parse failed: %1").arg(error.errorString()));
         return;
     }
 
@@ -218,9 +220,13 @@ void DashboardClient::handleStatusPayload(const QByteArray &payload)
 
     if (root.contains("data") && root.value("data").isObject()) {
         m_lastStatus = root.value("data").toObject();
+        emit logMessage(QString("[DEBUG] parsed status from http: %1")
+                            .arg(QString::fromUtf8(QJsonDocument(m_lastStatus).toJson(QJsonDocument::Compact))));
         emit statusUpdated(m_lastStatus);
     } else {
         m_lastStatus = root;
+        emit logMessage(QString("[DEBUG] parsed status from ws: %1")
+                            .arg(QString::fromUtf8(QJsonDocument(m_lastStatus).toJson(QJsonDocument::Compact))));
         emit statusUpdated(m_lastStatus);
     }
 }
@@ -272,6 +278,8 @@ void DashboardClient::handleTaskPayload(const QByteArray &payload)
 
 void DashboardClient::emitOfflineStatus(const QString &reason)
 {
+    emit logMessage(QString("[DEBUG] emitOfflineStatus reason=%1").arg(reason));
+
     QJsonObject status = m_lastStatus;
 
     if (!status.contains("robot_id")) status["robot_id"] = "robot_1";
