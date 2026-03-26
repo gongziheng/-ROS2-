@@ -9,10 +9,10 @@ class QGraphicsScene;
 class QGraphicsPathItem;
 class QGraphicsEllipseItem;
 class QGraphicsLineItem;
-class QGraphicsSimpleTextItem;
 class QWheelEvent;
 class QMouseEvent;
 class QResizeEvent;
+class QPainter;
 
 class TrajectoryView : public QGraphicsView
 {
@@ -38,6 +38,9 @@ private:
     void ensureSceneContains(const QPointF &p);
     void applyZoom(double factor);
 
+    void rebuildViewTransform(const QPointF &center);
+    double defaultPixelsPerMeter() const;
+
 private:
     QGraphicsScene *m_scene = nullptr;
     QGraphicsPathItem *m_pathItem = nullptr;
@@ -50,13 +53,14 @@ private:
     double m_currentYaw = 0.0;
     bool m_hasPose = false;
 
-    QRectF m_defaultSceneRect {-5.0, -5.0, 10.0, 10.0};
+    QRectF m_defaultSceneRect {-6.0, -6.0, 12.0, 12.0};
 
     double m_zoomLevel = 1.0;
-    const double m_minZoom = 0.3;
-    const double m_maxZoom = 6.0;
+    const double m_minZoom = 0.5;
+    const double m_maxZoom = 8.0;
 
-    double m_basePixelsPerMeter = 60.0;
+    // 默认希望看到约 8 米高的世界区域
+    const double m_defaultVisibleHeightMeters = 8.0;
 };
 
 #endif // TRAJECTORYVIEW_H

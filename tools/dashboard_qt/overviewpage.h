@@ -8,7 +8,6 @@ namespace Ui {
 class OverviewPage;
 }
 
-class QResizeEvent;
 class TrajectoryView;
 
 class OverviewPage : public QWidget
@@ -21,11 +20,8 @@ public:
 
     void updateStatus(const QJsonObject &status);
 
-protected:
-    void resizeEvent(QResizeEvent *event) override;
-
 private:
-    Ui::OverviewPage *ui;
+    Ui::OverviewPage *ui = nullptr;
     TrajectoryView *m_trajView = nullptr;
     double m_lastYaw = 0.0;
 };

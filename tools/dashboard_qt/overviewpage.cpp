@@ -2,7 +2,9 @@
 #include "ui_overview_page.h"
 #include "trajectoryview.h"
 
-#include <QResizeEvent>
+#include <QLayoutItem>
+#include <QSizePolicy>
+#include <QVBoxLayout>
 
 OverviewPage::OverviewPage(QWidget *parent)
     : QWidget(parent)
@@ -10,12 +12,28 @@ OverviewPage::OverviewPage(QWidget *parent)
 {
     ui->setupUi(this);
 
-    QWidget *host = ui->labelMapHint->parentWidget();
-    m_trajView = new TrajectoryView(host);
-    m_trajView->setGeometry(ui->labelMapHint->geometry());
-    m_trajView->show();
+    // 让地图区域内部不留白，轨迹视图真正铺满 frameMapCanvas
+    ui->verticalLayoutMapCanvas->setContentsMargins(0, 0, 0, 0);
+    ui->verticalLayoutMapCanvas->setSpacing(0);
 
-    ui->labelMapHint->hide();
+    // 清掉占位 QLabel（labelMapHint）
+    while (ui->verticalLayoutMapCanvas->count() > 0) {
+        QLayoutItem *item = ui->verticalLayoutMapCanvas->takeAt(0);
+        if (item) {
+            if (QWidget *w = item->widget()) {
+                w->deleteLater();
+            }
+            delete item;
+        }
+    }
+
+    // 正式把轨迹视图塞进 layout
+    m_trajView = new TrajectoryView(ui->frameMapCanvas);
+    m_trajView->setObjectName("trajView");
+    m_trajView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_trajView->setMinimumSize(200, 200);
+
+    ui->verticalLayoutMapCanvas->addWidget(m_trajView);
 }
 
 OverviewPage::~OverviewPage()
@@ -43,6 +61,7 @@ void OverviewPage::updateStatus(const QJsonObject &status)
             .arg(x, 0, 'f', 2)
             .arg(y, 0, 'f', 2)
             .arg(yaw, 0, 'f', 2));
+
     ui->lineMode->setText(mode);
     ui->plainAlertText->setPlainText(alert.isEmpty() ? "无告警" : alert);
 
@@ -58,14 +77,5 @@ void OverviewPage::updateStatus(const QJsonObject &status)
 
     if (m_trajView) {
         m_trajView->updateRobotPose(x, y, yaw, online);
-    }
-}
-
-void OverviewPage::resizeEvent(QResizeEvent *event)
-{
-    QWidget::resizeEvent(event);
-
-    if (m_trajView && ui->labelMapHint) {
-        m_trajView->setGeometry(ui->labelMapHint->geometry());
     }
 }

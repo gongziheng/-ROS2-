@@ -1,5 +1,6 @@
 #include "trajectoryview.h"
 
+#include <QFrame>
 #include <QGraphicsEllipseItem>
 #include <QGraphicsLineItem>
 #include <QGraphicsPathItem>
@@ -8,6 +9,7 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QResizeEvent>
+#include <QSizePolicy>
 #include <QWheelEvent>
 #include <QtMath>
 #include <cmath>
@@ -30,6 +32,8 @@ TrajectoryView::TrajectoryView(QWidget *parent)
     setDragMode(QGraphicsView::ScrollHandDrag);
     setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
     setResizeAnchor(QGraphicsView::AnchorViewCenter);
+    setAlignment(Qt::AlignCenter);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     setBackgroundBrush(QColor("#FBFDFC"));
 
@@ -37,23 +41,46 @@ TrajectoryView::TrajectoryView(QWidget *parent)
     pathPen.setCosmetic(true);
     m_pathItem = m_scene->addPath(QPainterPath(), pathPen);
 
-    m_robotItem = m_scene->addEllipse(QRectF(-0.15, -0.15, 0.30, 0.30),
-                                      QPen(Qt::NoPen),
-                                      QBrush(QColor("#168C48")));
+    m_robotItem = m_scene->addEllipse(
+        QRectF(-0.15, -0.15, 0.30, 0.30),
+        QPen(Qt::NoPen),
+        QBrush(QColor("#168C48")));
 
     QPen headingPen(QColor("#0F6B37"), 2.0);
     headingPen.setCosmetic(true);
     m_headingItem = m_scene->addLine(QLineF(), headingPen);
 
-    m_originItem = m_scene->addEllipse(QRectF(-0.08, -0.08, 0.16, 0.16),
-                                       QPen(QColor("#2563EB")),
-                                       QBrush(QColor("#2563EB")));
+    m_originItem = m_scene->addEllipse(
+        QRectF(-0.08, -0.08, 0.16, 0.16),
+        QPen(QColor("#2563EB")),
+        QBrush(QColor("#2563EB")));
 
     m_robotItem->hide();
     m_headingItem->hide();
 
     m_scene->setSceneRect(m_defaultSceneRect);
+
     resetViewToDefault();
+}
+
+double TrajectoryView::defaultPixelsPerMeter() const
+{
+    const int vh = qMax(1, viewport()->height());
+    const double padding = 24.0;
+    const double usableHeight = qMax(80.0, static_cast<double>(vh) - padding * 2.0);
+
+    return usableHeight / m_defaultVisibleHeightMeters;
+}
+
+void TrajectoryView::rebuildViewTransform(const QPointF &center)
+{
+    resetTransform();
+
+    const double ppm = defaultPixelsPerMeter();
+
+    // X 正向右，Y 正向上
+    scale(ppm * m_zoomLevel, -ppm * m_zoomLevel);
+    centerOn(center);
 }
 
 void TrajectoryView::clearTrajectory()
@@ -73,14 +100,8 @@ void TrajectoryView::clearTrajectory()
 
 void TrajectoryView::resetViewToDefault()
 {
-    resetTransform();
-
-    // 固定比例尺：1 米 = m_basePixelsPerMeter 像素
-    // Y 轴取反，让“向上”更符合地图直觉
-    scale(m_basePixelsPerMeter, -m_basePixelsPerMeter);
-
     m_zoomLevel = 1.0;
-    centerOn(0.0, 0.0);
+    rebuildViewTransform(QPointF(0.0, 0.0));
 }
 
 void TrajectoryView::appendPointIfNeeded(const QPointF &p)
@@ -126,23 +147,22 @@ void TrajectoryView::updateRobotItems(bool online)
 
     const QColor robotColor = online ? QColor("#168C48") : QColor("#DC2626");
     m_robotItem->setBrush(QBrush(robotColor));
-    m_robotItem->setRect(QRectF(m_currentPose.x() - 0.15,
-                                m_currentPose.y() - 0.15,
-                                0.30,
-                                0.30));
+    m_robotItem->setRect(QRectF(
+        m_currentPose.x() - 0.15,
+        m_currentPose.y() - 0.15,
+        0.30,
+        0.30));
 
     const double headingLen = 0.55;
     const QPointF head(
         m_currentPose.x() + headingLen * std::cos(m_currentYaw),
         m_currentPose.y() + headingLen * std::sin(m_currentYaw));
-
     m_headingItem->setLine(QLineF(m_currentPose, head));
 }
 
 void TrajectoryView::ensureSceneContains(const QPointF &p)
 {
     QRectF rect = m_scene->sceneRect();
-
     const double margin = 1.5;
     bool changed = false;
 
@@ -175,8 +195,8 @@ void TrajectoryView::applyZoom(double factor)
         return;
     }
 
-    scale(factor, factor);
     m_zoomLevel = nextZoom;
+    scale(factor, factor);
 }
 
 void TrajectoryView::updateRobotPose(double x, double y, double yaw, bool online)
@@ -192,8 +212,7 @@ void TrajectoryView::updateRobotPose(double x, double y, double yaw, bool online
     updateRobotItems(online);
     ensureSceneContains(p);
 
-    // 默认视角下，轻微跟随机器人；
-    // 用户手动缩放后，不打扰用户视图
+    // 默认缩放下保持原点居中；如果你后面想改成“机器人居中”，这里改 centerOn(p) 即可
     if (std::abs(m_zoomLevel - 1.0) < 1e-6) {
         centerOn(0.0, 0.0);
     }
@@ -208,13 +227,12 @@ void TrajectoryView::drawBackground(QPainter *painter, const QRectF &rect)
 {
     painter->fillRect(rect, QColor("#FBFDFC"));
 
-    // 细网格
+    // 网格
     QPen gridPen(QColor("#E6EEE8"));
     gridPen.setCosmetic(true);
     painter->setPen(gridPen);
 
     const double grid = 1.0;
-
     const double left = std::floor(rect.left() / grid) * grid;
     const double right = std::ceil(rect.right() / grid) * grid;
     const double top = std::floor(rect.top() / grid) * grid;
@@ -227,51 +245,13 @@ void TrajectoryView::drawBackground(QPainter *painter, const QRectF &rect)
         painter->drawLine(QLineF(left, y, right, y));
     }
 
-    // 坐标轴
+    // 坐标轴（可保留，也可删掉）
     QPen axisPen(QColor("#BFD8C6"));
     axisPen.setCosmetic(true);
     axisPen.setWidth(2);
     painter->setPen(axisPen);
     painter->drawLine(QLineF(0.0, top, 0.0, bottom));
     painter->drawLine(QLineF(left, 0.0, right, 0.0));
-
-    // 刻度线
-    QPen tickPen(QColor("#8FA99A"));
-    tickPen.setCosmetic(true);
-    tickPen.setWidth(1);
-    painter->setPen(tickPen);
-
-    const double tickHalfLen = 0.12;
-    for (double x = left; x <= right; x += grid) {
-        painter->drawLine(QLineF(x, -tickHalfLen, x, tickHalfLen));
-    }
-    for (double y = top; y <= bottom; y += grid) {
-        painter->drawLine(QLineF(-tickHalfLen, y, tickHalfLen, y));
-    }
-
-    // 刻度文字
-    painter->setPen(QColor("#6B7D71"));
-    QFont f = painter->font();
-    f.setPointSize(8);
-    painter->setFont(f);
-
-    for (double x = left; x <= right; x += grid) {
-        if (qFuzzyIsNull(x)) {
-            continue;
-        }
-        painter->drawText(QPointF(x + 0.08, 0.35), QString::number(x, 'f', 0));
-    }
-
-    for (double y = top; y <= bottom; y += grid) {
-        if (qFuzzyIsNull(y)) {
-            continue;
-        }
-        painter->drawText(QPointF(0.15, y - 0.08), QString::number(y, 'f', 0));
-    }
-
-    // 原点标签
-    painter->setPen(QColor("#2563EB"));
-    painter->drawText(QPointF(0.15, -0.15), QStringLiteral("O"));
 
     if (!m_hasPose && m_path.isEmpty()) {
         painter->setPen(QColor("#7A8B7E"));
@@ -281,13 +261,12 @@ void TrajectoryView::drawBackground(QPainter *painter, const QRectF &rect)
 
 void TrajectoryView::resizeEvent(QResizeEvent *event)
 {
+    const QPointF centerBefore = mapToScene(viewport()->rect().center());
+
     QGraphicsView::resizeEvent(event);
 
-    // 窗口尺寸变化时，只在默认缩放下重新居中，
-    // 不再按 sceneRect 重新 fit，避免轨迹缩成一团
-    if (std::abs(m_zoomLevel - 1.0) < 1e-6) {
-        centerOn(0.0, 0.0);
-    }
+    // 窗口尺寸变化后，重新按当前 viewport 计算默认比例尺
+    rebuildViewTransform(centerBefore);
 }
 
 void TrajectoryView::wheelEvent(QWheelEvent *event)
