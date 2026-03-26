@@ -180,7 +180,7 @@ class DashboardRosBridge(Node):
     def get_status_snapshot(self) -> Dict[str, Any]:
         snapshot = dict(self.latest_status)
 
-        if self.last_status_time == 0.0 or (time.monotonic() - self.last_status_time) > 1.5:
+        if self.last_status_time == 0.0 or (time.monotonic() - self.last_status_time) > 3.5:
             snapshot['is_online'] = False
             snapshot['mode'] = 'offline'
             snapshot['alert_text'] = 'ROS status timeout'

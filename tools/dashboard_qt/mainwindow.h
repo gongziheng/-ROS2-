@@ -8,12 +8,14 @@
 class QButtonGroup;
 class QPushButton;
 class QTimer;
+class QResizeEvent;
 
 class OverviewPage;
 class TasksPage;
 class AlertsPage;
 class SettingsPage;
 class DashboardClient;
+class ResizeHandle;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -31,6 +33,7 @@ public:
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private slots:
     void onNavOverviewClicked();
@@ -45,6 +48,8 @@ private:
     void setupPages();
     void setupConnections();
     void setupWindowBehavior();
+    void setupResizeHandles();
+    void updateResizeHandlesGeometry();
     void adaptToScreen();
 
     bool isWindowControlButton(QObject *obj) const;
@@ -68,6 +73,15 @@ private:
     QButtonGroup *m_navGroup = nullptr;
     QTimer *m_statusTimer = nullptr;
     QTimer *m_historyTimer = nullptr;
+
+    ResizeHandle *m_handleLeft = nullptr;
+    ResizeHandle *m_handleTop = nullptr;
+    ResizeHandle *m_handleRight = nullptr;
+    ResizeHandle *m_handleBottom = nullptr;
+    ResizeHandle *m_handleTopLeft = nullptr;
+    ResizeHandle *m_handleTopRight = nullptr;
+    ResizeHandle *m_handleBottomLeft = nullptr;
+    ResizeHandle *m_handleBottomRight = nullptr;
 
     bool m_pressed = false;
     QPoint m_point;

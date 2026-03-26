@@ -2,12 +2,12 @@
 #define DASHBOARDCLIENT_H
 
 #include <QObject>
+#include <QElapsedTimer>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QTimer>
 #include <QUrl>
 #include <QWebSocket>
-#include <QElapsedTimer>
-#include <QTimer>
 
 class QNetworkAccessManager;
 
@@ -17,6 +17,8 @@ class DashboardClient : public QObject
 
 public:
     explicit DashboardClient(QObject *parent = nullptr);
+
+    void setDebugEnabled(bool enabled);
 
     void connectWebSocket(const QUrl &url);
     void disconnectWebSocket();
@@ -49,6 +51,7 @@ private:
     void emitOfflineStatus(const QString &reason);
     void tryReconnect();
     void scheduleReconnect(const QString &reason);
+    void debugLog(const QString &text);
 
 private:
     QNetworkAccessManager *m_http = nullptr;
@@ -60,8 +63,11 @@ private:
     QUrl m_statusUrl;
     QUrl m_wsUrl;
     QJsonObject m_lastStatus;
+
     bool m_connected = false;
     bool m_connecting = false;
+    bool m_manualDisconnect = false;
+    bool m_debugEnabled = false;
 };
 
 #endif // DASHBOARDCLIENT_H

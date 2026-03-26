@@ -16,6 +16,7 @@ add_executable(dashboard_qt
     mainwindow.cpp
     resizehandle.cpp
     overviewpage.cpp
+    trajectoryview.cpp
     taskspage.cpp
     alertspage.cpp
     settingspage.cpp
@@ -24,6 +25,7 @@ add_executable(dashboard_qt
     mainwindow.h
     resizehandle.h
     overviewpage.h
+    trajectoryview.h
     taskspage.h
     alertspage.h
     settingspage.h

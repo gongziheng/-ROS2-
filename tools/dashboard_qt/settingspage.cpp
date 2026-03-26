@@ -49,6 +49,10 @@ SettingsPage::SettingsPage(QWidget *parent)
     m_hintLabel->setStyleSheet("color: #7a8696; font-size: 12px;");
     formLayout->addRow(QString(), m_hintLabel);
 
+    m_statusLabel = new QLabel(groupBox);
+    m_statusLabel->setWordWrap(true);
+    formLayout->addRow(tr("状态"), m_statusLabel);
+
     auto *buttonLayout = new QHBoxLayout();
     buttonLayout->addStretch();
 
@@ -74,12 +78,27 @@ SettingsPage::SettingsPage(QWidget *parent)
 
     setEndpoints(QUrl("http://127.0.0.1:8000"),
                  QUrl("ws://127.0.0.1:8000/ws/status"));
+    setStatusMessage(tr("当前为默认连接配置。"), true);
 }
 
 void SettingsPage::setEndpoints(const QUrl &apiBaseUrl, const QUrl &wsUrl)
 {
     m_apiBaseEdit->setText(apiBaseUrl.toString());
     m_wsEdit->setText(wsUrl.toString());
+}
+
+void SettingsPage::setStatusMessage(const QString &text, bool ok)
+{
+    if (!m_statusLabel) {
+        return;
+    }
+
+    m_statusLabel->setText(text);
+    if (ok) {
+        m_statusLabel->setStyleSheet("color: #2e7d32; font-size: 12px;");
+    } else {
+        m_statusLabel->setStyleSheet("color: #c62828; font-size: 12px;");
+    }
 }
 
 QString SettingsPage::normalizedApiBaseUrl(const QString &text) const
@@ -110,6 +129,13 @@ void SettingsPage::onApplyClicked()
 {
     const QString apiBaseUrl = normalizedApiBaseUrl(m_apiBaseEdit->text());
     const QString wsUrl = normalizedWsUrl(m_wsEdit->text());
+
+    if (apiBaseUrl.isEmpty() || wsUrl.isEmpty()) {
+        setStatusMessage(tr("请输入 API Base URL 和 WebSocket URL。"), false);
+        return;
+    }
+
+    setStatusMessage(tr("已提交连接配置，等待主窗口应用。"), true);
     emit endpointsApplied(apiBaseUrl, wsUrl);
 }
 
@@ -117,4 +143,5 @@ void SettingsPage::onRestoreDefaultsClicked()
 {
     setEndpoints(QUrl("http://127.0.0.1:8000"),
                  QUrl("ws://127.0.0.1:8000/ws/status"));
+    setStatusMessage(tr("已恢复默认地址，点击“应用”后生效。"), true);
 }

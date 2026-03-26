@@ -17,6 +17,7 @@ public:
     ~SettingsPage() override = default;
 
     void setEndpoints(const QUrl &apiBaseUrl, const QUrl &wsUrl);
+    void setStatusMessage(const QString &text, bool ok);
 
 signals:
     void endpointsApplied(const QString &apiBaseUrl, const QString &wsUrl);
@@ -33,6 +34,7 @@ private:
     QLineEdit *m_apiBaseEdit = nullptr;
     QLineEdit *m_wsEdit = nullptr;
     QLabel *m_hintLabel = nullptr;
+    QLabel *m_statusLabel = nullptr;
     QPushButton *m_applyButton = nullptr;
     QPushButton *m_restoreButton = nullptr;
 };
