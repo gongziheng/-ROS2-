@@ -1,16 +1,17 @@
 import math
+
 import rclpy
 from rclpy.node import Node
-# from geometry_msgs.msg import Point
-from robot_platform_interfaces.msg import TaskCommand
-from robot_platform_interfaces.msg import RobotStatus
 
-# 机器人根据机器人任务管理器发布的位置信息移动，并定时发布当前的位置信息
+from robot_platform_interfaces.msg import RobotStatus, TaskCommand, TaskState
+
+
 class FakeRobotNode(Node):
     def __init__(self):
         super().__init__('fake_robot_node')
 
         self.robot_id = 'robot_1'
+
         self.x = 0.0
         self.y = 0.0
         self.yaw = 0.0
@@ -24,24 +25,58 @@ class FakeRobotNode(Node):
 
         self.target_x = None
         self.target_y = None
-        # 发布当前机器人的状态
+
         self.status_pub = self.create_publisher(
-            RobotStatus, '/robot_1/status', 10
+            RobotStatus,
+            '/robot_1/status',
+            10
         )
-        # 订阅robot_1/goal，获取机器人的目标位置
+
+        self.task_state_pub = self.create_publisher(
+            TaskState,
+            '/robot_1/task_state',
+            10
+        )
+
         self.task_sub = self.create_subscription(
-            TaskCommand, '/robot_1/task_cmd', self.task_callback, 10
+            TaskCommand,
+            '/robot_1/task_cmd',
+            self.task_callback,
+            10
         )
-        # 定时器：定时发布机器人的状态
+
         self.timer = self.create_timer(0.1, self.on_timer)
-        self.get_logger().info(f'Fake robot node started. {self.robot_id}')
+
+        self.get_logger().info(f'Fake robot node started. robot_id={self.robot_id}')
+
+    def publish_task_state(self, state: str, message: str, distance_remaining: float):
+        if not self.task_id:
+            return
+
+        msg = TaskState()
+        msg.stamp = self.get_clock().now().to_msg()
+        msg.robot_id = self.robot_id
+        msg.task_id = self.task_id
+        msg.state = state
+        msg.task_type = self.task_type
+        msg.target_x = float(self.target_x if self.target_x is not None else self.x)
+        msg.target_y = float(self.target_y if self.target_y is not None else self.y)
+        msg.current_x = float(self.x)
+        msg.current_y = float(self.y)
+        msg.distance_remaining = float(distance_remaining)
+        msg.message = message
+
+        self.task_state_pub.publish(msg)
 
     def task_callback(self, msg: TaskCommand):
         self.target_x = float(msg.target_x)
         self.target_y = float(msg.target_y)
         self.task_id = msg.task_id
-        self.task_type = msg.task_type
+        self.task_type = msg.task_type if msg.task_type else 'goto'
         self.mode = 'moving'
+
+        distance = math.hypot(self.target_x - self.x, self.target_y - self.y)
+        self.publish_task_state('pending', 'task accepted by fake robot', distance)
 
         self.get_logger().info(
             f'Received task: id={self.task_id}, type={self.task_type}, '
@@ -53,28 +88,35 @@ class FakeRobotNode(Node):
         speed = 0.5
 
         if self.target_x is not None and self.target_y is not None:
-        # if None not in(self.target_x, self.target_y):
             dx = self.target_x - self.x
             dy = self.target_y - self.y
-            dist = math.hypot(dx, dy)   # 等价于 sqrt(x*x + y*y)
+            dist = math.hypot(dx, dy)
 
             if dist > 0.05:
                 self.yaw = math.atan2(dy, dx)
                 step = min(speed * dt, dist)
+
                 self.x += step * math.cos(self.yaw)
                 self.y += step * math.sin(self.yaw)
+
                 self.linear_vel = speed
                 self.angular_vel = 0.0
                 self.mode = 'moving'
+
+                remain = math.hypot(self.target_x - self.x, self.target_y - self.y)
+                self.publish_task_state('running', 'moving to target', remain)
             else:
                 self.x = self.target_x
                 self.y = self.target_y
-                self.target_x = None
-                self.target_y = None
                 self.linear_vel = 0.0
                 self.angular_vel = 0.0
                 self.mode = 'idle'
+
+                self.publish_task_state('succeeded', 'goal reached', 0.0)
                 self.get_logger().info(f'Goal reached: task={self.task_id}')
+
+                self.target_x = None
+                self.target_y = None
                 self.task_id = ''
                 self.task_type = ''
         else:
@@ -104,6 +146,8 @@ class FakeRobotNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = FakeRobotNode()
-    rclpy.spin(node)
-    # node.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()

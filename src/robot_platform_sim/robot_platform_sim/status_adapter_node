@@ -1,0 +1,114 @@
+import math
+
+import rclpy
+from rclpy.node import Node
+
+from nav_msgs.msg import Odometry
+from robot_platform_interfaces.msg import RobotStatus, TaskState
+
+
+def yaw_from_quaternion(x: float, y: float, z: float, w: float) -> float:
+    siny_cosp = 2.0 * (w * z + x * y)
+    cosy_cosp = 1.0 - 2.0 * (y * y + z * z)
+    return math.atan2(siny_cosp, cosy_cosp)
+
+
+class StatusAdapterNode(Node):
+    def __init__(self):
+        super().__init__('status_adapter_node')
+
+        self.declare_parameter('robot_id', 'robot_1')
+        self.declare_parameter('odom_topic', '/odom')
+        self.declare_parameter('task_state_topic', '/robot_1/task_state')
+        self.declare_parameter('status_topic', '/robot_1/status')
+
+        self.robot_id = self.get_parameter('robot_id').value
+        self.odom_topic = self.get_parameter('odom_topic').value
+        self.task_state_topic = self.get_parameter('task_state_topic').value
+        self.status_topic = self.get_parameter('status_topic').value
+
+        self.status_pub = self.create_publisher(RobotStatus, self.status_topic, 10)
+
+        self.odom_sub = self.create_subscription(
+            Odometry, self.odom_topic, self.odom_callback, 10
+        )
+        self.task_state_sub = self.create_subscription(
+            TaskState, self.task_state_topic, self.task_state_callback, 10
+        )
+
+        self.timer = self.create_timer(0.1, self.publish_status)
+
+        self.x = 0.0
+        self.y = 0.0
+        self.yaw = 0.0
+        self.linear_vel = 0.0
+        self.angular_vel = 0.0
+        self.has_odom = False
+
+        self.battery_pct = 100.0
+        self.mode = 'idle'
+        self.task_id = ''
+        self.alert_text = ''
+
+        self.get_logger().info(
+            f'status_adapter_node started, odom={self.odom_topic}, status={self.status_topic}'
+        )
+
+    def odom_callback(self, msg: Odometry):
+        self.x = float(msg.pose.pose.position.x)
+        self.y = float(msg.pose.pose.position.y)
+
+        q = msg.pose.pose.orientation
+        self.yaw = yaw_from_quaternion(q.x, q.y, q.z, q.w)
+
+        self.linear_vel = float(msg.twist.twist.linear.x)
+        self.angular_vel = float(msg.twist.twist.angular.z)
+        self.has_odom = True
+
+        self.battery_pct = max(10.0, self.battery_pct - 0.001)
+
+    def task_state_callback(self, msg: TaskState):
+        if msg.robot_id != self.robot_id:
+            return
+
+        self.task_id = msg.task_id
+
+        if msg.state in ('pending', 'running'):
+            self.mode = 'moving'
+            self.alert_text = ''
+        elif msg.state == 'succeeded':
+            self.mode = 'idle'
+            self.task_id = ''
+            self.alert_text = ''
+        elif msg.state == 'failed':
+            self.mode = 'error'
+            self.alert_text = msg.message
+        else:
+            self.mode = 'idle'
+
+    def publish_status(self):
+        msg = RobotStatus()
+        msg.stamp = self.get_clock().now().to_msg()
+        msg.robot_id = self.robot_id
+        msg.x = float(self.x)
+        msg.y = float(self.y)
+        msg.yaw = float(self.yaw)
+        msg.linear_vel = float(self.linear_vel)
+        msg.angular_vel = float(self.angular_vel)
+        msg.battery_pct = float(self.battery_pct)
+        msg.mode = self.mode
+        msg.task_id = self.task_id
+        msg.is_online = bool(self.has_odom)
+        msg.alert_text = self.alert_text
+
+        self.status_pub.publish(msg)
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = StatusAdapterNode()
+    try:
+        rclpy.spin(node)
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
