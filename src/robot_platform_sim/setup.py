@@ -23,9 +23,9 @@ setup(
         ],
     },
     entry_points={
-        'console_scripts': [
-            'simple_executor_node = robot_platform_sim.simple_executor_node:main',
-            'status_adapter_node = robot_platform_sim.status_adapter_node:main',
-        ],
-    },
+    'console_scripts': [
+        'simple_executor_node = robot_platform_sim.simple_executor_node:main',
+        'status_adapter_node = robot_platform_sim.status_adapter_node:main',
+    ],
+},
 )

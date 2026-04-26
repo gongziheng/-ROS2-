@@ -120,7 +120,12 @@ class SimpleExecutorNode(Node):
         self.last_state = state
 
     def stop_robot(self):
-        self.cmd_pub.publish(Twist())
+        if not rclpy.ok():
+            return
+        try:
+            self.cmd_pub.publish(Twist())
+        except Exception as e:
+            self.get_logger().warn(f'Failed to publish stop cmd during shutdown: {e}')
 
     def on_timer(self):
         if not self.has_odom or self.active_task is None:
@@ -162,7 +167,13 @@ def main(args=None):
     node = SimpleExecutorNode()
     try:
         rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
     finally:
-        node.stop_robot()
+        try:
+            node.stop_robot()
+        except Exception:
+            pass
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
